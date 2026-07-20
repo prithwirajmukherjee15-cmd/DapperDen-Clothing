@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from "lucide-react";
+import { Search, ShoppingBag, Heart, PackageSearch, Menu, X, ChevronDown } from "lucide-react";
 import { CATEGORIES_BY_GENDER, COLLECTIONS, formatINR } from "../mock/mock";
 import { useData } from "../context/DataContext";
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
 
 const GENDERS = [
   { key: "men", label: "Men" },
@@ -22,7 +21,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { count, wishlist } = useCart();
-  const { user } = useAuth();
   const { searchProducts } = useData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [openGender, setOpenGender] = useState(null);
@@ -188,13 +186,12 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4">
           <motion.div whileTap={{ scale: 0.8 }} className="relative hidden sm:block">
-            <Link to="/account" className="text-white transition hover:text-lime" aria-label="account">
-              <User size={20} />
-              {user && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime" />}
+            <Link to="/track" className="text-white transition hover:text-lime" aria-label="track order" data-testid="nav-track-order">
+              <PackageSearch size={20} />
             </Link>
           </motion.div>
           <motion.div whileTap={{ scale: 0.8 }} className="relative">
-            <Link to="/account" className="text-white transition hover:text-lime" aria-label="wishlist">
+            <Link to="/wishlist" className="text-white transition hover:text-lime" aria-label="wishlist" data-testid="nav-wishlist">
               <Heart size={20} />
               {wishlist.length > 0 && (
                 <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-magenta px-1 text-[10px] font-bold text-white">

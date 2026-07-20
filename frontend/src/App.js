@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
-import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -17,11 +16,10 @@ import PLP from "./pages/PLP";
 import PDP from "./pages/PDP";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
-import Account from "./pages/Account";
 import Search from "./pages/Search";
 import Help from "./pages/Help";
 import TrackOrder from "./pages/TrackOrder";
-import AuthCallback from "./pages/AuthCallback";
+import Wishlist from "./pages/Wishlist";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -32,11 +30,6 @@ function ScrollToTop() {
 }
 
 function AppRoutes() {
-  const location = useLocation();
-  // Handle OAuth callback FIRST (session_id lives in the URL fragment)
-  if (location.hash?.includes("session_id=")) {
-    return <AuthCallback />;
-  }
   return (
     <>
       <ScrollToTop />
@@ -55,7 +48,7 @@ function AppRoutes() {
           <Route path="/product/:slug" element={<PDP />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
-          <Route path="/account" element={<Account />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/search" element={<Search />} />
           <Route path="/help" element={<Help />} />
@@ -71,16 +64,14 @@ function App() {
   return (
     <div className="App grain min-h-screen bg-[#0a0a0b]">
       <BrowserRouter>
-        <AuthProvider>
-          <DataProvider>
-            <CartProvider>
-              <ScrollProgress />
-              <CustomCursor />
-              <AppRoutes />
-              <Toaster />
-            </CartProvider>
-          </DataProvider>
-        </AuthProvider>
+        <DataProvider>
+          <CartProvider>
+            <ScrollProgress />
+            <CustomCursor />
+            <AppRoutes />
+            <Toaster />
+          </CartProvider>
+        </DataProvider>
       </BrowserRouter>
     </div>
   );
