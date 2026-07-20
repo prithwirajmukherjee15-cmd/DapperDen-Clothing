@@ -40,7 +40,6 @@ export default function PLP({ mode }) {
   }, [slug, mode, products]);
 
   const [sizes, setSizes] = useState([]);
-  const [colors, setColors] = useState([]);
   const [maxPrice, setMaxPrice] = useState(3600);
   const [sort, setSort] = useState("featured");
   const [mobileFilter, setMobileFilter] = useState(false);
@@ -48,7 +47,6 @@ export default function PLP({ mode }) {
   const filtered = useMemo(() => {
     let list = base.filter((p) => p.price <= maxPrice);
     if (sizes.length) list = list.filter((p) => sizes.some((s) => p.sizes.includes(s)));
-    if (colors.length) list = list.filter((p) => p.colors.some((c) => colors.includes(c.name)));
     switch (sort) {
       case "price-asc": list = [...list].sort((a, b) => a.price - b.price); break;
       case "price-desc": list = [...list].sort((a, b) => b.price - a.price); break;
@@ -57,11 +55,11 @@ export default function PLP({ mode }) {
       default: break;
     }
     return list;
-  }, [base, sizes, colors, maxPrice, sort]);
+  }, [base, sizes, maxPrice, sort]);
 
   const toggle = (arr, set, val) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
-  const clearAll = () => { setSizes([]); setColors([]); setMaxPrice(3600); };
+  const clearAll = () => { setSizes([]); setMaxPrice(3600); };
 
   const title = meta ? meta.name : "All Products";
   const banner = mode === "collection" && meta ? meta.banner : null;
@@ -79,18 +77,6 @@ export default function PLP({ mode }) {
             <button key={s} onClick={() => toggle(sizes, setSizes, s)}
               className={`h-9 w-11 rounded-md border text-sm font-medium transition ${sizes.includes(s) ? "border-lime bg-lime text-[#0a0a0b]" : "border-[#2a2a30] text-white hover:border-lime"}`}>
               {s}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-[#8b8b93]">Color</p>
-        <div className="space-y-2">
-          {COLOR_OPTS.map((c) => (
-            <button key={c.name} onClick={() => toggle(colors, setColors, c.name)} className="flex w-full items-center gap-3">
-              <span className="h-6 w-6 rounded-full border border-[#2a2a30]" style={{ background: c.hex }} />
-              <span className={`text-sm ${colors.includes(c.name) ? "text-lime" : "text-white"}`}>{c.name}</span>
-              {colors.includes(c.name) && <Check size={14} className="ml-auto text-lime" />}
             </button>
           ))}
         </div>
