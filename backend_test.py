@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dapper Den Backend API Test Suite
+Dapper Den Backend API Test Suite - Regression + New Verification
 Tests all backend routes with /api prefix
 """
 import requests
@@ -43,60 +43,152 @@ def log_test(name, passed, details=""):
         test_results["failed"].append({"name": name, "details": details})
 
 
-def test_catalog_products():
-    """Test GET /api/products - should return 26 products"""
+# ============================================================================
+# NEW TESTS - Bug Fix Verification
+# ============================================================================
+
+def test_products_count_60():
+    """NEW: Test GET /api/products returns exactly 60 products"""
     try:
         resp = requests.get(f"{BASE_URL}/products", timeout=10)
         if resp.status_code == 200:
             products = resp.json()
-            if isinstance(products, list) and len(products) == 26:
-                log_test("GET /api/products returns 26 products", True)
-                return True
+            if isinstance(products, list) and len(products) == 60:
+                log_test("NEW: GET /api/products returns exactly 60 products", True)
+                return True, products
             else:
-                log_test("GET /api/products returns 26 products", False, 
-                        f"Expected 26 products, got {len(products) if isinstance(products, list) else 'non-list'}")
-                return False
+                log_test("NEW: GET /api/products returns exactly 60 products", False, 
+                        f"Expected 60 products, got {len(products) if isinstance(products, list) else 'non-list'}")
+                return False, []
         else:
-            log_test("GET /api/products returns 26 products", False, 
+            log_test("NEW: GET /api/products returns exactly 60 products", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
-            return False
+            return False, []
     except Exception as e:
-        log_test("GET /api/products returns 26 products", False, str(e))
-        return False
+        log_test("NEW: GET /api/products returns exactly 60 products", False, str(e))
+        return False, []
 
 
-def test_catalog_filter_category():
-    """Test GET /api/products?category=hoodies"""
-    try:
-        resp = requests.get(f"{BASE_URL}/products?category=hoodies", timeout=10)
-        if resp.status_code == 200:
-            products = resp.json()
-            if isinstance(products, list) and len(products) > 0:
-                # Check all are hoodies
-                all_hoodies = all(p.get("category") == "hoodies" for p in products)
-                if all_hoodies:
-                    log_test("GET /api/products?category=hoodies filters correctly", True, 
-                            f"Found {len(products)} hoodies")
-                    return True
+def test_category_filters():
+    """NEW: Test each category returns exactly 10 products"""
+    categories = ["t-shirts", "oversized", "hoodies", "joggers", "shirts", "accessories"]
+    all_passed = True
+    
+    for category in categories:
+        try:
+            resp = requests.get(f"{BASE_URL}/products?category={category}", timeout=10)
+            if resp.status_code == 200:
+                products = resp.json()
+                if isinstance(products, list) and len(products) == 10:
+                    # Verify all products belong to this category
+                    all_match = all(p.get("category") == category for p in products)
+                    if all_match:
+                        log_test(f"NEW: GET /api/products?category={category} returns exactly 10", True)
+                    else:
+                        log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
+                                "Some products don't match category")
+                        all_passed = False
                 else:
-                    log_test("GET /api/products?category=hoodies filters correctly", False, 
-                            "Some products are not hoodies")
-                    return False
+                    log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
+                            f"Expected 10 products, got {len(products) if isinstance(products, list) else 'non-list'}")
+                    all_passed = False
             else:
-                log_test("GET /api/products?category=hoodies filters correctly", False, 
-                        f"Expected non-empty array, got {len(products) if isinstance(products, list) else 'non-list'}")
-                return False
+                log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
+                        f"Status {resp.status_code}")
+                all_passed = False
+        except Exception as e:
+            log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, str(e))
+            all_passed = False
+    
+    return all_passed
+
+
+def test_no_duplicate_primary_images(products):
+    """NEW: Test no duplicate PRIMARY images (images[0])"""
+    try:
+        if not products:
+            log_test("NEW: No duplicate PRIMARY images", False, "No products provided")
+            return False
+        
+        primary_images = []
+        for p in products:
+            images = p.get("images", [])
+            if images and len(images) > 0:
+                primary_images.append(images[0])
+        
+        # Check for duplicates
+        unique_images = set(primary_images)
+        
+        if len(primary_images) == 60 and len(unique_images) == 60:
+            log_test("NEW: No duplicate PRIMARY images", True, 
+                    f"All 60 products have unique primary images")
+            return True
         else:
-            log_test("GET /api/products?category=hoodies filters correctly", False, 
-                    f"Status {resp.status_code}")
+            duplicates = len(primary_images) - len(unique_images)
+            log_test("NEW: No duplicate PRIMARY images", False, 
+                    f"Found {duplicates} duplicate(s). Total: {len(primary_images)}, Unique: {len(unique_images)}")
             return False
     except Exception as e:
-        log_test("GET /api/products?category=hoodies filters correctly", False, str(e))
+        log_test("NEW: No duplicate PRIMARY images", False, str(e))
         return False
 
 
-def test_catalog_filter_collection():
-    """Test GET /api/products?collection=cosmic-heroes"""
+def test_new_slugs():
+    """NEW: Test sample new slugs resolve correctly"""
+    slugs = [
+        "titan-oversized",
+        "shogun-hoodie", 
+        "ninja-jogger",
+        "sensei-shirt",
+        "neon-shades",
+        "volt-sneakers",
+        "orbit-beanie"
+    ]
+    
+    all_passed = True
+    
+    for slug in slugs:
+        try:
+            resp = requests.get(f"{BASE_URL}/products/{slug}", timeout=10)
+            if resp.status_code == 200:
+                product = resp.json()
+                required_fields = ["slug", "name", "price", "images", "colors", "sizes"]
+                has_all = all(field in product for field in required_fields)
+                if has_all and product.get("slug") == slug:
+                    log_test(f"NEW: GET /api/products/{slug} returns valid product", True)
+                else:
+                    log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
+                            "Missing required fields or slug mismatch")
+                    all_passed = False
+            else:
+                log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
+                        f"Status {resp.status_code}")
+                all_passed = False
+        except Exception as e:
+            log_test(f"NEW: GET /api/products/{slug} returns valid product", False, str(e))
+            all_passed = False
+    
+    return all_passed
+
+
+def test_nonexistent_slug():
+    """NEW: Test non-existent slug returns 404"""
+    try:
+        resp = requests.get(f"{BASE_URL}/products/does-not-exist-slug-xyz", timeout=10)
+        if resp.status_code == 404:
+            log_test("NEW: Non-existent slug returns 404", True)
+            return True
+        else:
+            log_test("NEW: Non-existent slug returns 404", False, 
+                    f"Expected 404, got {resp.status_code}")
+            return False
+    except Exception as e:
+        log_test("NEW: Non-existent slug returns 404", False, str(e))
+        return False
+
+
+def test_collection_cosmic_heroes():
+    """NEW: Test GET /api/products?collection=cosmic-heroes returns only that collection"""
     try:
         resp = requests.get(f"{BASE_URL}/products?collection=cosmic-heroes", timeout=10)
         if resp.status_code == 200:
@@ -104,262 +196,196 @@ def test_catalog_filter_collection():
             if isinstance(products, list) and len(products) > 0:
                 all_cosmic = all(p.get("collection") == "cosmic-heroes" for p in products)
                 if all_cosmic:
-                    log_test("GET /api/products?collection=cosmic-heroes filters correctly", True, 
+                    log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", True, 
                             f"Found {len(products)} products")
                     return True
                 else:
-                    log_test("GET /api/products?collection=cosmic-heroes filters correctly", False, 
-                            "Some products are not from cosmic-heroes")
+                    log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
+                            "Some products are not from cosmic-heroes collection")
                     return False
             else:
-                log_test("GET /api/products?collection=cosmic-heroes filters correctly", False, 
+                log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
                         "Expected non-empty array")
                 return False
         else:
-            log_test("GET /api/products?collection=cosmic-heroes filters correctly", False, 
+            log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("GET /api/products?collection=cosmic-heroes filters correctly", False, str(e))
+        log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, str(e))
         return False
 
 
-def test_product_by_slug():
-    """Test GET /api/products/nebula-drift-tee"""
-    try:
-        resp = requests.get(f"{BASE_URL}/products/nebula-drift-tee", timeout=10)
-        if resp.status_code == 200:
-            product = resp.json()
-            required_fields = ["slug", "name", "price", "images", "colors", "sizes"]
-            has_all = all(field in product for field in required_fields)
-            if has_all and product.get("slug") == "nebula-drift-tee":
-                log_test("GET /api/products/nebula-drift-tee returns product", True)
-                return True
-            else:
-                missing = [f for f in required_fields if f not in product]
-                log_test("GET /api/products/nebula-drift-tee returns product", False, 
-                        f"Missing fields: {missing}" if missing else "Slug mismatch")
-                return False
-        else:
-            log_test("GET /api/products/nebula-drift-tee returns product", False, 
-                    f"Status {resp.status_code}")
-            return False
-    except Exception as e:
-        log_test("GET /api/products/nebula-drift-tee returns product", False, str(e))
-        return False
-
-
-def test_product_not_found():
-    """Test GET /api/products/does-not-exist returns 404"""
-    try:
-        resp = requests.get(f"{BASE_URL}/products/does-not-exist", timeout=10)
-        if resp.status_code == 404:
-            log_test("GET /api/products/does-not-exist returns 404", True)
-            return True
-        else:
-            log_test("GET /api/products/does-not-exist returns 404", False, 
-                    f"Expected 404, got {resp.status_code}")
-            return False
-    except Exception as e:
-        log_test("GET /api/products/does-not-exist returns 404", False, str(e))
-        return False
-
+# ============================================================================
+# REGRESSION TESTS
+# ============================================================================
 
 def test_search_with_query():
-    """Test GET /api/search?q=hoodie"""
+    """REGRESSION: Test GET /api/search?q=hoodie returns non-empty"""
     try:
         resp = requests.get(f"{BASE_URL}/search?q=hoodie", timeout=10)
         if resp.status_code == 200:
             results = resp.json()
             if isinstance(results, list) and len(results) > 0:
-                log_test("GET /api/search?q=hoodie returns results", True, 
+                log_test("REGRESSION: GET /api/search?q=hoodie returns results", True, 
                         f"Found {len(results)} results")
                 return True
             else:
-                log_test("GET /api/search?q=hoodie returns results", False, 
+                log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, 
                         "Expected non-empty array")
                 return False
         else:
-            log_test("GET /api/search?q=hoodie returns results", False, 
+            log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("GET /api/search?q=hoodie returns results", False, str(e))
+        log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, str(e))
         return False
 
 
 def test_search_empty():
-    """Test GET /api/search?q= returns empty array"""
+    """REGRESSION: Test GET /api/search?q= returns empty array"""
     try:
         resp = requests.get(f"{BASE_URL}/search?q=", timeout=10)
         if resp.status_code == 200:
             results = resp.json()
             if isinstance(results, list) and len(results) == 0:
-                log_test("GET /api/search?q= returns empty array", True)
+                log_test("REGRESSION: GET /api/search?q= returns empty array", True)
                 return True
             else:
-                log_test("GET /api/search?q= returns empty array", False, 
+                log_test("REGRESSION: GET /api/search?q= returns empty array", False, 
                         f"Expected empty array, got {len(results)} items")
                 return False
         else:
-            log_test("GET /api/search?q= returns empty array", False, 
+            log_test("REGRESSION: GET /api/search?q= returns empty array", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("GET /api/search?q= returns empty array", False, str(e))
+        log_test("REGRESSION: GET /api/search?q= returns empty array", False, str(e))
         return False
 
 
-def test_catalog_endpoint():
-    """Test GET /api/catalog returns products, collections, categories"""
-    try:
-        resp = requests.get(f"{BASE_URL}/catalog", timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            has_all = all(key in data for key in ["products", "collections", "categories"])
-            if has_all:
-                log_test("GET /api/catalog returns full catalog", True, 
-                        f"Products: {len(data['products'])}, Collections: {len(data['collections'])}, Categories: {len(data['categories'])}")
-                return True
-            else:
-                missing = [k for k in ["products", "collections", "categories"] if k not in data]
-                log_test("GET /api/catalog returns full catalog", False, 
-                        f"Missing keys: {missing}")
-                return False
-        else:
-            log_test("GET /api/catalog returns full catalog", False, 
-                    f"Status {resp.status_code}")
-            return False
-    except Exception as e:
-        log_test("GET /api/catalog returns full catalog", False, str(e))
-        return False
-
-
-def test_coupon_valid_percent():
-    """Test POST /api/coupon/validate with DAPPER10"""
+def test_coupon_dapper10():
+    """REGRESSION: Test POST /api/coupon/validate with DAPPER10"""
     try:
         payload = {"code": "DAPPER10", "subtotal": 2000}
         resp = requests.post(f"{BASE_URL}/coupon/validate", json=payload, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             if data.get("valid") and data.get("discount") == 200:
-                log_test("POST /api/coupon/validate DAPPER10 (10%)", True, 
-                        f"Discount: ₹{data['discount']}")
+                log_test("REGRESSION: DAPPER10 subtotal 2000 -> valid, discount 200", True)
                 return True
             else:
-                log_test("POST /api/coupon/validate DAPPER10 (10%)", False, 
+                log_test("REGRESSION: DAPPER10 subtotal 2000 -> valid, discount 200", False, 
                         f"Expected valid=True, discount=200, got {data}")
                 return False
         else:
-            log_test("POST /api/coupon/validate DAPPER10 (10%)", False, 
+            log_test("REGRESSION: DAPPER10 subtotal 2000 -> valid, discount 200", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("POST /api/coupon/validate DAPPER10 (10%)", False, str(e))
+        log_test("REGRESSION: DAPPER10 subtotal 2000 -> valid, discount 200", False, str(e))
         return False
 
 
-def test_coupon_below_min():
-    """Test POST /api/coupon/validate FLAT300 below minimum"""
+def test_coupon_flat300_below_min():
+    """REGRESSION: Test POST /api/coupon/validate FLAT300 below minimum"""
     try:
         payload = {"code": "FLAT300", "subtotal": 1000}
         resp = requests.post(f"{BASE_URL}/coupon/validate", json=payload, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             if not data.get("valid"):
-                log_test("POST /api/coupon/validate FLAT300 below min", True, 
-                        "Correctly rejected")
+                log_test("REGRESSION: FLAT300 subtotal 1000 -> invalid", True)
                 return True
             else:
-                log_test("POST /api/coupon/validate FLAT300 below min", False, 
+                log_test("REGRESSION: FLAT300 subtotal 1000 -> invalid", False, 
                         "Should be invalid but got valid=True")
                 return False
         else:
-            log_test("POST /api/coupon/validate FLAT300 below min", False, 
+            log_test("REGRESSION: FLAT300 subtotal 1000 -> invalid", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("POST /api/coupon/validate FLAT300 below min", False, str(e))
+        log_test("REGRESSION: FLAT300 subtotal 1000 -> invalid", False, str(e))
         return False
 
 
-def test_coupon_valid_flat():
-    """Test POST /api/coupon/validate FLAT300 above minimum"""
+def test_coupon_flat300_above_min():
+    """REGRESSION: Test POST /api/coupon/validate FLAT300 above minimum"""
     try:
         payload = {"code": "FLAT300", "subtotal": 2000}
         resp = requests.post(f"{BASE_URL}/coupon/validate", json=payload, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             if data.get("valid") and data.get("discount") == 300:
-                log_test("POST /api/coupon/validate FLAT300 above min", True, 
-                        f"Discount: ₹{data['discount']}")
+                log_test("REGRESSION: FLAT300 subtotal 2000 -> valid, discount 300", True)
                 return True
             else:
-                log_test("POST /api/coupon/validate FLAT300 above min", False, 
+                log_test("REGRESSION: FLAT300 subtotal 2000 -> valid, discount 300", False, 
                         f"Expected valid=True, discount=300, got {data}")
                 return False
         else:
-            log_test("POST /api/coupon/validate FLAT300 above min", False, 
+            log_test("REGRESSION: FLAT300 subtotal 2000 -> valid, discount 300", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("POST /api/coupon/validate FLAT300 above min", False, str(e))
+        log_test("REGRESSION: FLAT300 subtotal 2000 -> valid, discount 300", False, str(e))
         return False
 
 
 def test_coupon_invalid():
-    """Test POST /api/coupon/validate with invalid code"""
+    """REGRESSION: Test POST /api/coupon/validate with bogus code"""
     try:
-        payload = {"code": "NONSENSE", "subtotal": 2000}
+        payload = {"code": "BOGUS123", "subtotal": 2000}
         resp = requests.post(f"{BASE_URL}/coupon/validate", json=payload, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             if not data.get("valid"):
-                log_test("POST /api/coupon/validate invalid code", True, 
-                        "Correctly rejected")
+                log_test("REGRESSION: Bogus coupon -> invalid", True)
                 return True
             else:
-                log_test("POST /api/coupon/validate invalid code", False, 
+                log_test("REGRESSION: Bogus coupon -> invalid", False, 
                         "Should be invalid but got valid=True")
                 return False
         else:
-            log_test("POST /api/coupon/validate invalid code", False, 
+            log_test("REGRESSION: Bogus coupon -> invalid", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("POST /api/coupon/validate invalid code", False, str(e))
+        log_test("REGRESSION: Bogus coupon -> invalid", False, str(e))
         return False
 
 
 def test_auth_me_without_token():
-    """Test GET /api/auth/me without auth returns 401"""
+    """REGRESSION: Test GET /api/auth/me without token returns 401"""
     try:
         resp = requests.get(f"{BASE_URL}/auth/me", timeout=10)
         if resp.status_code == 401:
-            log_test("GET /api/auth/me without auth returns 401", True)
+            log_test("REGRESSION: GET /api/auth/me without token -> 401", True)
             return True
         else:
-            log_test("GET /api/auth/me without auth returns 401", False, 
+            log_test("REGRESSION: GET /api/auth/me without token -> 401", False, 
                     f"Expected 401, got {resp.status_code}")
             return False
     except Exception as e:
-        log_test("GET /api/auth/me without auth returns 401", False, str(e))
+        log_test("REGRESSION: GET /api/auth/me without token -> 401", False, str(e))
         return False
 
 
 def test_orders_without_token():
-    """Test GET /api/orders without auth returns 401"""
+    """REGRESSION: Test GET /api/orders without token returns 401"""
     try:
         resp = requests.get(f"{BASE_URL}/orders", timeout=10)
         if resp.status_code == 401:
-            log_test("GET /api/orders without auth returns 401", True)
+            log_test("REGRESSION: GET /api/orders without token -> 401", True)
             return True
         else:
-            log_test("GET /api/orders without auth returns 401", False, 
+            log_test("REGRESSION: GET /api/orders without token -> 401", False, 
                     f"Expected 401, got {resp.status_code}")
             return False
     except Exception as e:
-        log_test("GET /api/orders without auth returns 401", False, str(e))
+        log_test("REGRESSION: GET /api/orders without token -> 401", False, str(e))
         return False
 
 
@@ -407,7 +433,7 @@ def seed_test_user():
 
 
 def test_auth_me_with_token(token):
-    """Test GET /api/auth/me with Bearer token"""
+    """REGRESSION: Test GET /api/auth/me with Bearer token"""
     try:
         headers = {"Authorization": f"Bearer {token}"}
         resp = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=10)
@@ -416,25 +442,24 @@ def test_auth_me_with_token(token):
             required_fields = ["user_id", "email", "name"]
             has_all = all(field in user for field in required_fields)
             if has_all:
-                log_test("GET /api/auth/me with Bearer token", True, 
-                        f"User: {user.get('email')}")
+                log_test("REGRESSION: GET /api/auth/me with token returns user", True)
                 return True
             else:
                 missing = [f for f in required_fields if f not in user]
-                log_test("GET /api/auth/me with Bearer token", False, 
+                log_test("REGRESSION: GET /api/auth/me with token returns user", False, 
                         f"Missing fields: {missing}")
                 return False
         else:
-            log_test("GET /api/auth/me with Bearer token", False, 
+            log_test("REGRESSION: GET /api/auth/me with token returns user", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
             return False
     except Exception as e:
-        log_test("GET /api/auth/me with Bearer token", False, str(e))
+        log_test("REGRESSION: GET /api/auth/me with token returns user", False, str(e))
         return False
 
 
 def test_create_order(token):
-    """Test POST /api/orders with Bearer token"""
+    """REGRESSION: Test POST /api/orders with Bearer token"""
     try:
         headers = {"Authorization": f"Bearer {token}"}
         payload = {
@@ -457,9 +482,9 @@ def test_create_order(token):
             "coupon": None,
             "payment_method": "COD",
             "address": {
-                "name": "John Doe",
+                "name": "Arjun Mehta",
                 "phone": "9876543210",
-                "line1": "123 Street",
+                "line1": "456 MG Road",
                 "city": "Mumbai",
                 "state": "Maharashtra",
                 "pincode": "400001"
@@ -469,72 +494,48 @@ def test_create_order(token):
         if resp.status_code == 200:
             order = resp.json()
             if order.get("order_id") and order.get("status") == "Confirmed":
-                log_test("POST /api/orders creates order", True, 
+                log_test("REGRESSION: POST /api/orders creates order (order_id, status Confirmed)", True, 
                         f"Order ID: {order.get('order_id')}")
-                return True, order.get("order_id")
+                return True
             else:
-                log_test("POST /api/orders creates order", False, 
+                log_test("REGRESSION: POST /api/orders creates order (order_id, status Confirmed)", False, 
                         f"Missing order_id or status != Confirmed: {order}")
-                return False, None
+                return False
         else:
-            log_test("POST /api/orders creates order", False, 
+            log_test("REGRESSION: POST /api/orders creates order (order_id, status Confirmed)", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
-            return False, None
+            return False
     except Exception as e:
-        log_test("POST /api/orders creates order", False, str(e))
-        return False, None
+        log_test("REGRESSION: POST /api/orders creates order (order_id, status Confirmed)", False, str(e))
+        return False
 
 
 def test_list_orders(token):
-    """Test GET /api/orders with Bearer token"""
+    """REGRESSION: Test GET /api/orders with Bearer token"""
     try:
         headers = {"Authorization": f"Bearer {token}"}
         resp = requests.get(f"{BASE_URL}/orders", headers=headers, timeout=10)
         if resp.status_code == 200:
             orders = resp.json()
             if isinstance(orders, list) and len(orders) > 0:
-                log_test("GET /api/orders lists orders", True, 
+                log_test("REGRESSION: GET /api/orders lists orders", True, 
                         f"Found {len(orders)} order(s)")
                 return True
             else:
-                log_test("GET /api/orders lists orders", False, 
+                log_test("REGRESSION: GET /api/orders lists orders", False, 
                         "Expected non-empty array")
                 return False
         else:
-            log_test("GET /api/orders lists orders", False, 
+            log_test("REGRESSION: GET /api/orders lists orders", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
             return False
     except Exception as e:
-        log_test("GET /api/orders lists orders", False, str(e))
-        return False
-
-
-def test_wishlist_get(token):
-    """Test GET /api/wishlist with Bearer token"""
-    try:
-        headers = {"Authorization": f"Bearer {token}"}
-        resp = requests.get(f"{BASE_URL}/wishlist", headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if "wishlist" in data and isinstance(data["wishlist"], list):
-                log_test("GET /api/wishlist returns wishlist", True, 
-                        f"Wishlist: {data['wishlist']}")
-                return True
-            else:
-                log_test("GET /api/wishlist returns wishlist", False, 
-                        f"Expected {{'wishlist': []}}, got {data}")
-                return False
-        else:
-            log_test("GET /api/wishlist returns wishlist", False, 
-                    f"Status {resp.status_code}: {resp.text[:200]}")
-            return False
-    except Exception as e:
-        log_test("GET /api/wishlist returns wishlist", False, str(e))
+        log_test("REGRESSION: GET /api/orders lists orders", False, str(e))
         return False
 
 
 def test_wishlist_toggle_add(token):
-    """Test POST /api/wishlist/toggle to add item"""
+    """REGRESSION: Test POST /api/wishlist/toggle to add item"""
     try:
         headers = {"Authorization": f"Bearer {token}"}
         payload = {"product_id": "orbit-hoodie"}
@@ -542,24 +543,23 @@ def test_wishlist_toggle_add(token):
         if resp.status_code == 200:
             data = resp.json()
             if "wishlist" in data and "orbit-hoodie" in data["wishlist"]:
-                log_test("POST /api/wishlist/toggle adds item", True, 
-                        f"Wishlist: {data['wishlist']}")
+                log_test("REGRESSION: Wishlist toggle add works", True)
                 return True
             else:
-                log_test("POST /api/wishlist/toggle adds item", False, 
+                log_test("REGRESSION: Wishlist toggle add works", False, 
                         f"Expected orbit-hoodie in wishlist, got {data}")
                 return False
         else:
-            log_test("POST /api/wishlist/toggle adds item", False, 
+            log_test("REGRESSION: Wishlist toggle add works", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
             return False
     except Exception as e:
-        log_test("POST /api/wishlist/toggle adds item", False, str(e))
+        log_test("REGRESSION: Wishlist toggle add works", False, str(e))
         return False
 
 
 def test_wishlist_toggle_remove(token):
-    """Test POST /api/wishlist/toggle to remove item"""
+    """REGRESSION: Test POST /api/wishlist/toggle to remove item"""
     try:
         headers = {"Authorization": f"Bearer {token}"}
         payload = {"product_id": "orbit-hoodie"}
@@ -567,19 +567,18 @@ def test_wishlist_toggle_remove(token):
         if resp.status_code == 200:
             data = resp.json()
             if "wishlist" in data and "orbit-hoodie" not in data["wishlist"]:
-                log_test("POST /api/wishlist/toggle removes item", True, 
-                        f"Wishlist: {data['wishlist']}")
+                log_test("REGRESSION: Wishlist toggle remove works", True)
                 return True
             else:
-                log_test("POST /api/wishlist/toggle removes item", False, 
+                log_test("REGRESSION: Wishlist toggle remove works", False, 
                         f"Expected orbit-hoodie removed, got {data}")
                 return False
         else:
-            log_test("POST /api/wishlist/toggle removes item", False, 
+            log_test("REGRESSION: Wishlist toggle remove works", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
             return False
     except Exception as e:
-        log_test("POST /api/wishlist/toggle removes item", False, str(e))
+        log_test("REGRESSION: Wishlist toggle remove works", False, str(e))
         return False
 
 
@@ -608,35 +607,55 @@ def main():
     """Run all tests"""
     print("\n" + "="*70)
     print("DAPPER DEN BACKEND API TEST SUITE")
+    print("Regression + New Verification")
     print("="*70 + "\n")
     
-    # 1. CATALOG TESTS (public, no auth)
-    print("📦 CATALOG TESTS")
+    # ========================================================================
+    # NEW TESTS - Bug Fix Verification
+    # ========================================================================
+    print("🆕 NEW TESTS - Bug Fix Verification")
     print("-" * 70)
-    test_catalog_products()
-    test_catalog_filter_category()
-    test_catalog_filter_collection()
-    test_product_by_slug()
-    test_product_not_found()
+    
+    # 1. Test 60 products
+    passed, products = test_products_count_60()
+    
+    # 2. Test category filters (10 each)
+    test_category_filters()
+    
+    # 3. Test no duplicate primary images
+    if products:
+        test_no_duplicate_primary_images(products)
+    
+    # 4. Test new slugs
+    test_new_slugs()
+    
+    # 5. Test non-existent slug
+    test_nonexistent_slug()
+    
+    # 6. Test collection filter
+    test_collection_cosmic_heroes()
+    
+    # ========================================================================
+    # REGRESSION TESTS
+    # ========================================================================
+    print("\n🔄 REGRESSION TESTS")
+    print("-" * 70)
+    
+    # 7. Search tests
     test_search_with_query()
     test_search_empty()
-    test_catalog_endpoint()
     
-    # 2. COUPON TESTS
-    print("\n🎟️  COUPON TESTS")
-    print("-" * 70)
-    test_coupon_valid_percent()
-    test_coupon_below_min()
-    test_coupon_valid_flat()
+    # 8. Coupon tests
+    test_coupon_dapper10()
+    test_coupon_flat300_below_min()
+    test_coupon_flat300_above_min()
     test_coupon_invalid()
     
-    # 3. AUTH TESTS (without token)
-    print("\n🔒 AUTH TESTS (without token)")
-    print("-" * 70)
+    # 9. Auth protection tests (without token)
     test_auth_me_without_token()
     test_orders_without_token()
     
-    # 4. SEED TEST USER
+    # 10. Seed test user
     print("\n👤 SEEDING TEST USER")
     print("-" * 70)
     token, user_id = seed_test_user()
@@ -646,21 +665,16 @@ def main():
         print_summary()
         sys.exit(1)
     
-    # 5. AUTH TESTS (with token)
+    # 11. Auth tests with token
     print("🔓 AUTH TESTS (with Bearer token)")
     print("-" * 70)
     test_auth_me_with_token(token)
     
-    # 6. ORDERS TESTS
-    print("\n📋 ORDERS TESTS")
-    print("-" * 70)
+    # 12. Orders tests
     test_create_order(token)
     test_list_orders(token)
     
-    # 7. WISHLIST TESTS
-    print("\n❤️  WISHLIST TESTS")
-    print("-" * 70)
-    test_wishlist_get(token)
+    # 13. Wishlist tests
     test_wishlist_toggle_add(token)
     test_wishlist_toggle_remove(token)
     

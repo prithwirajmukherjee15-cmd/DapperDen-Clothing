@@ -40,12 +40,12 @@ const P = {
 };
 
 export const CATEGORIES = [
-  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: P.tee1 },
-  { id: "oversized", name: "Oversized", slug: "oversized", image: P.tee7 },
-  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: P.hoodie1 },
-  { id: "joggers", name: "Joggers", slug: "joggers", image: P.jog1 },
-  { id: "shirts", name: "Shirts", slug: "shirts", image: P.shirt1 },
-  { id: "accessories", name: "Accessories", slug: "accessories", image: P.acc1 },
+  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: "https://images.pexels.com/photos/36942017/pexels-photo-36942017.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "oversized", name: "Oversized", slug: "oversized", image: "https://images.pexels.com/photos/36942018/pexels-photo-36942018.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: "https://images.pexels.com/photos/8346261/pexels-photo-8346261.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "joggers", name: "Joggers", slug: "joggers", image: "https://images.pexels.com/photos/5696896/pexels-photo-5696896.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "shirts", name: "Shirts", slug: "shirts", image: "https://images.pexels.com/photos/28938765/pexels-photo-28938765.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "accessories", name: "Accessories", slug: "accessories", image: "https://images.unsplash.com/photo-1533603531139-2c4d04df8f16?w=800&q=80" },
 ];
 
 export const COLLECTIONS = [
@@ -206,8 +206,8 @@ export const LOOKBOOK = [
     country: "France",
     landmark: "Eiffel Tower",
     line: "Draped by the tower.",
-    video: "https://videos.pexels.com/video-files/1739010/1739010-hd_1920_1080_30fps.mp4",
-    poster: HERO_IMAGES[2],
+    video: "https://videos.pexels.com/video-files/8798097/8798097-sd_506_960_25fps.mp4",
+    poster: "https://images.pexels.com/videos/8798097/pexels-photo-8798097.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
   {
     id: "london",
@@ -215,8 +215,8 @@ export const LOOKBOOK = [
     country: "United Kingdom",
     landmark: "Tower Bridge",
     line: "Streets of the Thames.",
-    video: "https://videos.pexels.com/video-files/3129671/3129671-uhd_3840_2160_30fps.mp4",
-    poster: HERO_IMAGES[0],
+    video: "https://videos.pexels.com/video-files/8397017/8397017-sd_960_506_25fps.mp4",
+    poster: "https://images.pexels.com/videos/8397017/pexels-photo-8397017.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
   {
     id: "tokyo",
@@ -224,8 +224,8 @@ export const LOOKBOOK = [
     country: "Japan",
     landmark: "Shibuya Crossing",
     line: "Neon meets knit.",
-    video: "https://videos.pexels.com/video-files/2611250/2611250-uhd_2560_1440_30fps.mp4",
-    poster: HERO_IMAGES[6],
+    video: "https://videos.pexels.com/video-files/8477535/8477535-sd_360_640_24fps.mp4",
+    poster: "https://images.pexels.com/videos/8477535/pexels-photo-8477535.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
   {
     id: "newyork",
@@ -233,8 +233,8 @@ export const LOOKBOOK = [
     country: "USA",
     landmark: "Brooklyn Bridge",
     line: "The city never sleeps in Dapper Den.",
-    video: "https://videos.pexels.com/video-files/3214448/3214448-uhd_3840_2160_25fps.mp4",
-    poster: HERO_IMAGES[4],
+    video: "https://videos.pexels.com/video-files/8992283/8992283-hd_1080_1920_25fps.mp4",
+    poster: "https://images.pexels.com/videos/8992283/pexels-photo-8992283.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
   {
     id: "milan",
@@ -242,8 +242,8 @@ export const LOOKBOOK = [
     country: "Italy",
     landmark: "Duomo",
     line: "Fashion capital, streetwear soul.",
-    video: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_24fps.mp4",
-    poster: HERO_IMAGES[5],
+    video: "https://videos.pexels.com/video-files/8798401/8798401-sd_506_960_25fps.mp4",
+    poster: "https://images.pexels.com/videos/8798401/pexels-photo-8798401.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
   {
     id: "berlin",
@@ -251,8 +251,8 @@ export const LOOKBOOK = [
     country: "Germany",
     landmark: "Brandenburg Gate",
     line: "Underground energy.",
-    video: "https://videos.pexels.com/video-files/6774633/6774633-hd_1920_1080_30fps.mp4",
-    poster: HERO_IMAGES[7],
+    video: "https://videos.pexels.com/video-files/8994733/8994733-hd_1080_1920_25fps.mp4",
+    poster: "https://images.pexels.com/videos/8994733/pexels-photo-8994733.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
 ];
 
