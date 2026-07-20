@@ -1,0 +1,14 @@
+# Netlify build settings for the Dapper Den frontend (React).
+# The frontend lives in the /frontend folder of this repo.
+
+[build]
+  base = "frontend"
+  command = "yarn build"
+  publish = "build"
+
+# Single-page-app routing: send every path to index.html so React Router works
+# and page refreshes don't show a 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

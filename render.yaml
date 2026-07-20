@@ -1,9 +1,9 @@
-# Render Blueprint for Dapper Den
-# Deploy both services at once: New + → "Blueprint" → connect this repo.
-# After the first deploy, set the two "sync: false" secrets in the dashboard.
+# Render Blueprint for the Dapper Den BACKEND (FastAPI).
+# The frontend is deployed separately on Netlify (see DEPLOYMENT.md).
+# Deploy: Render Dashboard → New + → Blueprint → connect this repo,
+# then fill in the MONGO_URL secret.
 
 services:
-  # ---------- Backend API (FastAPI) ----------
   - type: web
     name: dapperden-api
     runtime: python
@@ -16,24 +16,9 @@ services:
         sync: false
       - key: DB_NAME
         value: dapperden
-      - key: CORS_ORIGINS       # "*" is fine (guest-only, no cookies); lock to your frontend URL if you like
+      - key: CORS_ORIGINS       # "*" is fine (guest-only, no cookies)
         value: "*"
       - key: RESEND_API_KEY     # leave blank to keep emails mocked; paste re_... to send for real
         sync: false
       - key: SENDER_EMAIL
         value: onboarding@resend.dev
-
-  # ---------- Frontend (React static site) ----------
-  - type: web
-    name: dapperden-web
-    runtime: static
-    rootDir: frontend
-    buildCommand: yarn install && yarn build
-    staticPublishPath: ./build
-    envVars:
-      - key: REACT_APP_BACKEND_URL   # paste the dapperden-api URL after it deploys (https://dapperden-api.onrender.com)
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
