@@ -3,28 +3,34 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { COUPONS, formatINR, PRODUCTS } from "../mock/mock";
+import { formatINR } from "../mock/mock";
+import { useData } from "../context/DataContext";
+import api from "../api";
 import ProductCard from "../components/ProductCard";
 
 export default function Cart() {
   const navigate = useNavigate();
   const { items, updateQty, removeFromCart, subtotal, mrpTotal } = useCart();
+  const { products } = useData();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState(null);
   const [msg, setMsg] = useState("");
 
-  const applyCoupon = () => {
-    const c = COUPONS[code.trim().toUpperCase()];
-    if (!c) { setMsg("Invalid coupon code"); setApplied(null); return; }
-    if (c.min && subtotal < c.min) { setMsg(`Add items worth ${formatINR(c.min - subtotal)} more`); setApplied(null); return; }
-    setApplied({ code: code.trim().toUpperCase(), ...c });
-    setMsg("");
+  const applyCoupon = async () => {
+    try {
+      const res = await api.post("/coupon/validate", { code: code.trim(), subtotal });
+      if (!res.data.valid) { setMsg(res.data.message || "Invalid coupon"); setApplied(null); return; }
+      setApplied({ code: res.data.code, label: res.data.label, discount: res.data.discount });
+      setMsg("");
+    } catch {
+      setMsg("Could not validate coupon");
+    }
   };
 
-  const discount = applied ? (applied.type === "percent" ? Math.round((subtotal * applied.value) / 100) : applied.value) : 0;
+  const discount = applied ? applied.discount : 0;
   const shipping = subtotal >= 1499 || subtotal === 0 ? 0 : 99;
   const total = Math.max(0, subtotal - discount) + shipping;
-  const upsell = PRODUCTS.filter((p) => p.badge === "New").slice(0, 4);
+  const upsell = products.filter((p) => p.badge === "New").slice(0, 4);
 
   if (!items.length) {
     return (
@@ -100,7 +106,7 @@ export default function Cart() {
             <span className="font-grotesk text-lg font-semibold text-white">Total</span>
             <span className="font-display text-2xl text-white">{formatINR(total)}</span>
           </div>
-          <button onClick={() => navigate("/checkout", { state: { total, discount, shipping } })}
+          <button onClick={() => navigate("/checkout", { state: { total, discount, shipping, subtotal, coupon: applied?.code || null } })}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition hover:bg-lime-dim">
             Proceed to Checkout <ArrowRight size={18} />
           </button>

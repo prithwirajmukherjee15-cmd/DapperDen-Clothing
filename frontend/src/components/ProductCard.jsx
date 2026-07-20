@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Plus, Star } from "lucide-react";
@@ -8,16 +8,30 @@ import { useCart } from "../context/CartContext";
 export default function ProductCard({ product }) {
   const { toggleWishlist, inWishlist, addToCart } = useCart();
   const [hover, setHover] = useState(false);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
+  const ref = useRef(null);
   const wished = inWishlist(product.id);
   const img = hover && product.images[1] ? product.images[1] : product.images[0];
 
+  const onMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    setTilt({ rx: -py * 8, ry: px * 8 });
+  };
+
   return (
     <motion.div
-      whileHover={{ y: -8 }}
-      transition={{ type: "spring", stiffness: 300, damping: 22 }}
+      ref={ref}
+      onMouseMove={onMove}
+      animate={{ y: hover ? -8 : 0, rotateX: tilt.rx, rotateY: tilt.ry }}
+      transition={{ type: "spring", stiffness: 250, damping: 20 }}
+      style={{ transformStyle: "preserve-3d", transformPerspective: 900 }}
       className="group relative"
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseLeave={() => { setHover(false); setTilt({ rx: 0, ry: 0 }); }}
     >
       <Link to={`/product/${product.slug}`} className="block">
         <div className="relative overflow-hidden rounded-xl bg-[#131316] aspect-[3/4]">

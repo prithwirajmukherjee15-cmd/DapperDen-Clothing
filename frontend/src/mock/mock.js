@@ -194,6 +194,68 @@ export const HERO_SLIDES = [
   },
 ];
 
+// Cinematic royalty-free films (Pexels CDN, hotlink-verified). Used as ambient
+// brand lookbook footage with heavy overlays + Dapper Den branding.
+export const HERO_VIDEO = "https://videos.pexels.com/video-files/2098988/2098988-hd_1920_1080_30fps.mp4";
+export const HERO_VIDEO_ALT = "https://videos.pexels.com/video-files/2022395/2022395-hd_1920_1080_30fps.mp4";
+
+export const LOOKBOOK = [
+  {
+    id: "paris",
+    city: "PARIS",
+    country: "France",
+    landmark: "Eiffel Tower",
+    line: "Draped by the tower.",
+    video: "https://videos.pexels.com/video-files/1739010/1739010-hd_1920_1080_30fps.mp4",
+    poster: HERO_IMAGES[2],
+  },
+  {
+    id: "london",
+    city: "LONDON",
+    country: "United Kingdom",
+    landmark: "Tower Bridge",
+    line: "Streets of the Thames.",
+    video: "https://videos.pexels.com/video-files/3129671/3129671-uhd_3840_2160_30fps.mp4",
+    poster: HERO_IMAGES[0],
+  },
+  {
+    id: "tokyo",
+    city: "TOKYO",
+    country: "Japan",
+    landmark: "Shibuya Crossing",
+    line: "Neon meets knit.",
+    video: "https://videos.pexels.com/video-files/2611250/2611250-uhd_2560_1440_30fps.mp4",
+    poster: HERO_IMAGES[6],
+  },
+  {
+    id: "newyork",
+    city: "NEW YORK",
+    country: "USA",
+    landmark: "Brooklyn Bridge",
+    line: "The city never sleeps in Dapper Den.",
+    video: "https://videos.pexels.com/video-files/3214448/3214448-uhd_3840_2160_25fps.mp4",
+    poster: HERO_IMAGES[4],
+  },
+  {
+    id: "milan",
+    city: "MILAN",
+    country: "Italy",
+    landmark: "Duomo",
+    line: "Fashion capital, streetwear soul.",
+    video: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_24fps.mp4",
+    poster: HERO_IMAGES[5],
+  },
+  {
+    id: "berlin",
+    city: "BERLIN",
+    country: "Germany",
+    landmark: "Brandenburg Gate",
+    line: "Underground energy.",
+    video: "https://videos.pexels.com/video-files/6774633/6774633-hd_1920_1080_30fps.mp4",
+    poster: HERO_IMAGES[7],
+  },
+];
+
 export const COUPONS = {
   DAPPER10: { type: "percent", value: 10, label: "10% off" },
   FLAT300: { type: "flat", value: 300, label: "₹300 off orders above ₹1499", min: 1499 },

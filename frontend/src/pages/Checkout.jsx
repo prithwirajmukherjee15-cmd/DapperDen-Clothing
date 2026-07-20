@@ -3,6 +3,8 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, CreditCard, Truck, Wallet, Landmark, PartyPopper } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import api from "../api";
 import { formatINR } from "../mock/mock";
 
 const STEPS = ["Address", "Payment", "Confirmation"];
@@ -11,16 +13,35 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { items, subtotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [addr, setAddr] = useState({ name: "", phone: "", pincode: "", line: "", city: "", stateName: "" });
   const [pay, setPay] = useState("upi");
-  const [orderId] = useState("DD" + Math.floor(100000 + Math.random() * 900000));
+  const [orderId, setOrderId] = useState("DD" + Math.floor(100000 + Math.random() * 900000));
 
   const total = state?.total ?? subtotal;
 
   const canProceed = addr.name && addr.phone.length >= 10 && addr.pincode.length >= 6 && addr.line && addr.city;
 
-  const placeOrder = () => {
+  const placeOrder = async () => {
+    if (user) {
+      try {
+        const payload = {
+          items: items.map((i) => ({ id: i.id, name: i.name, slug: i.slug, image: i.image, price: i.price, size: i.size, color: i.color, qty: i.qty })),
+          total,
+          subtotal: state?.subtotal ?? subtotal,
+          discount: state?.discount ?? 0,
+          shipping: state?.shipping ?? 0,
+          coupon: state?.coupon ?? null,
+          payment_method: pay,
+          address: addr,
+        };
+        const res = await api.post("/orders", payload);
+        if (res.data?.order_id) setOrderId(res.data.order_id);
+      } catch {
+        /* keep local order id on failure */
+      }
+    }
     clearCart();
     setStep(2);
   };

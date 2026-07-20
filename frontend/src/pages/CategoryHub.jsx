@@ -2,12 +2,14 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { CATEGORIES, COLLECTIONS, HERO_IMAGES, PRODUCTS } from "../mock/mock";
+import { CATEGORIES, COLLECTIONS, HERO_IMAGES } from "../mock/mock";
+import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 
 export default function CategoryHub() {
-  const fresh = PRODUCTS.filter((p) => p.badge === "New").slice(0, 4);
+  const { products } = useData();
+  const fresh = products.filter((p) => p.badge === "New").slice(0, 4);
   return (
     <div>
       {/* Hub hero */}

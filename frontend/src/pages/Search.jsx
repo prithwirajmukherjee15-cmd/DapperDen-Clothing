@@ -1,13 +1,14 @@
 import React from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
-import { searchProducts } from "../mock/mock";
+import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 
 export default function Search() {
   const [params] = useSearchParams();
   const q = params.get("q") || "";
+  const { searchProducts } = useData();
   const results = searchProducts(q);
 
   return (

@@ -2,13 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X, Check } from "lucide-react";
-import {
-  PRODUCTS,
-  CATEGORIES,
-  COLLECTIONS,
-  getProductsByCategory,
-  getProductsByCollection,
-} from "../mock/mock";
+import { CATEGORIES, COLLECTIONS } from "../mock/mock";
+import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 
@@ -30,6 +25,7 @@ const SORTS = [
 
 export default function PLP({ mode }) {
   const params = useParams();
+  const { products, getProductsByCategory, getProductsByCollection } = useData();
   const slug = mode === "collection" ? params.slug : params.category;
 
   const meta =
@@ -38,9 +34,10 @@ export default function PLP({ mode }) {
       : CATEGORIES.find((c) => c.slug === slug);
 
   const base = useMemo(() => {
-    if (!slug) return PRODUCTS;
+    if (!slug) return products;
     return mode === "collection" ? getProductsByCollection(slug) : getProductsByCategory(slug);
-  }, [slug, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, mode, products]);
 
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);

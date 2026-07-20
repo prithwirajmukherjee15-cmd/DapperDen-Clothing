@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from "lucide-react";
-import { CATEGORIES, COLLECTIONS, searchProducts, formatINR } from "../mock/mock";
+import { CATEGORIES, COLLECTIONS, formatINR } from "../mock/mock";
+import { useData } from "../context/DataContext";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -10,6 +11,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { count, wishlist } = useCart();
   const { user } = useAuth();
+  const { searchProducts } = useData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mega, setMega] = useState(false);
   const [q, setQ] = useState("");

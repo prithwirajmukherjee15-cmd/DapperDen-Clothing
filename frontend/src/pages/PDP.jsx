@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Heart, ShoppingBag, Truck, RotateCcw, ShieldCheck, ChevronRight, Ruler, Minus, Plus, X, Check } from "lucide-react";
-import { getProduct, PRODUCTS, formatINR } from "../mock/mock";
+import { formatINR } from "../mock/mock";
+import { useData } from "../context/DataContext";
 import { useCart } from "../context/CartContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
@@ -12,6 +13,7 @@ export default function PDP() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getProduct, products } = useData();
   const product = getProduct(slug);
   const { addToCart, toggleWishlist, inWishlist } = useCart();
 
@@ -34,7 +36,7 @@ export default function PDP() {
   }
 
   const wished = inWishlist(product.id);
-  const related = PRODUCTS.filter((p) => p.collection === product.collection && p.id !== product.id).slice(0, 4);
+  const related = products.filter((p) => p.collection === product.collection && p.id !== product.id).slice(0, 4);
 
   const handleAdd = (buyNow = false) => {
     if (!size) { setErr(true); toast({ title: "Please select a size" }); return; }

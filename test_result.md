@@ -101,3 +101,108 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Dapper Den — premium dark streetwear e-commerce clone (full architecture flow) with full-stack backend, Emergent Google auth, catalog, cart, orders, coupons, and heavy 3D/video visuals."
+
+backend:
+  - task: "Catalog API (products, product-by-slug, search, categories/collections)"
+    implemented: true
+    working: true
+    file: "backend/server.py, backend/catalog.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "GET /api/products (filters category/collection), GET /api/products/{slug}, GET /api/search?q=, GET /api/catalog. Seeded from catalog.py (26 products)."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ All catalog endpoints tested and working. GET /api/products returns 26 products. Category filter (hoodies) returns 5 products. Collection filter (cosmic-heroes) returns 4 products. GET /api/products/nebula-drift-tee returns product with all required fields. GET /api/products/does-not-exist returns 404. GET /api/search?q=hoodie returns 5 results. GET /api/search?q= returns empty array. GET /api/catalog returns products, collections, and categories."
+  - task: "Coupon validation"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "POST /api/coupon/validate with {code, subtotal}. Codes DAPPER10, STREET20, FLAT300 (FLAT300 has min 1499)."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ All coupon validation tests passed. DAPPER10 (10%) correctly calculates ₹200 discount on ₹2000 subtotal. FLAT300 correctly rejects subtotal below ₹1499 minimum. FLAT300 correctly applies ₹300 discount on ₹2000 subtotal. Invalid code 'NONSENSE' correctly rejected."
+  - task: "Emergent Google Auth (session, me, logout)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "POST /api/auth/session (X-Session-ID header -> Emergent session-data, sets httpOnly cookie), GET /api/auth/me, POST /api/auth/logout. Uses user_id UUID pattern + _id:0 projection. Test with a seeded session token via Authorization Bearer per auth_testing.md."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ Auth endpoints working correctly. GET /api/auth/me without token returns 401 as expected. Seeded test user (test-user-1784561769) with session token. GET /api/auth/me with Bearer token returns user with user_id, email, and name fields. Authorization header fallback working (backend checks cookie first, then Bearer header)."
+  - task: "Orders (create + list) - auth protected"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "POST /api/orders (requires auth), GET /api/orders (user's orders). Should return 401 without auth."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ Orders endpoints fully functional. GET /api/orders without auth returns 401 as expected. POST /api/orders with Bearer token successfully creates order with order_id (DD338576) and status 'Confirmed'. GET /api/orders with Bearer token returns list of user's orders (1 order found)."
+  - task: "Wishlist toggle/get - auth protected"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "GET /api/wishlist, POST /api/wishlist/toggle {product_id}. Requires auth."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ Wishlist endpoints working perfectly. GET /api/wishlist with Bearer token returns empty wishlist initially. POST /api/wishlist/toggle with product_id 'orbit-hoodie' adds item to wishlist. Second toggle removes item from wishlist. Toggle functionality confirmed."
+
+frontend:
+  - task: "Full frontend flow"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/*"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Not yet tested via automation; awaiting user permission."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    -agent: "main"
+    -message: "Phase 2 backend implemented. Please test all backend endpoints. For auth-gated endpoints (orders, wishlist, /auth/me), seed a test user + session in the 'test_database' DB per /app/auth_testing.md and pass the token via Authorization: Bearer header (backend checks cookie first, then Bearer header). Verify orders create/list, coupon validation (DAPPER10 percent, FLAT300 min-check), catalog endpoints, and 401 on protected routes without token."
+    -agent: "testing"
+    -message: "✅ ALL BACKEND TESTS PASSED (20/20). Comprehensive testing completed: (1) Catalog API - all 8 endpoints working (products list, category/collection filters, product by slug, 404 handling, search with/without query, full catalog). (2) Coupon validation - all 4 scenarios working (percent discount, flat discount with min check, invalid codes). (3) Auth protection - 401 responses confirmed for /auth/me and /orders without token. (4) Auth with Bearer token - /auth/me returns user data correctly. (5) Orders - create and list working with proper auth. (6) Wishlist - get, toggle add/remove all working. Test user seeded: test-user-1784561769. All backend functionality is production-ready. NO ISSUES FOUND."
