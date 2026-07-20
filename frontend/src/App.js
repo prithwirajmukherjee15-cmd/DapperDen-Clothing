@@ -20,6 +20,7 @@ import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import Search from "./pages/Search";
 import Help from "./pages/Help";
+import TrackOrder from "./pages/TrackOrder";
 import AuthCallback from "./pages/AuthCallback";
 
 function ScrollToTop() {
@@ -55,6 +56,7 @@ function AppRoutes() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/track" element={<TrackOrder />} />
           <Route path="/search" element={<Search />} />
           <Route path="/help" element={<Help />} />
           <Route path="/returns" element={<Help />} />

@@ -19,7 +19,7 @@ const cols = [
       ["FAQ", "/help"],
       ["Shipping", "/help"],
       ["Returns & Exchange", "/returns"],
-      ["Track Order", "/account"],
+      ["Track Order", "/track"],
       ["Size Guide", "/help"],
     ],
   },

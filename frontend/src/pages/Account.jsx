@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Package, Heart, MapPin, LogOut } from "lucide-react";
+import { User, Package, Heart, MapPin, LogOut, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useData } from "../context/DataContext";
 import { formatINR } from "../mock/mock";
+import { INDIAN_CITIES, INDIAN_STATES } from "../mock/india";
 import api from "../api";
 import ProductCard from "../components/ProductCard";
+
+const EMPTY_ADDR = { label: "Home", name: "", phone: "", pincode: "", line: "", city: "", stateName: "" };
 
 export default function Account() {
   const { user, loading, login, logout } = useAuth();
@@ -15,12 +18,34 @@ export default function Account() {
   const { products } = useData();
   const [tab, setTab] = useState("orders");
   const [orders, setOrders] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [showAddrForm, setShowAddrForm] = useState(false);
+  const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
 
   useEffect(() => {
     if (user) {
       api.get("/orders").then((res) => setOrders(res.data || [])).catch(() => setOrders([]));
+      api.get("/addresses").then((res) => setAddresses(res.data?.addresses || [])).catch(() => setAddresses([]));
     }
   }, [user]);
+
+  const addrValid = addrForm.name && addrForm.phone.length >= 10 && addrForm.pincode.length >= 6 && addrForm.line && addrForm.city && addrForm.stateName;
+
+  const saveAddress = async () => {
+    try {
+      const res = await api.post("/addresses", addrForm);
+      setAddresses(res.data?.addresses || []);
+      setShowAddrForm(false);
+      setAddrForm(EMPTY_ADDR);
+    } catch { /* ignore */ }
+  };
+
+  const deleteAddress = async (id) => {
+    try {
+      const res = await api.delete(`/addresses/${id}`);
+      setAddresses(res.data?.addresses || []);
+    } catch { /* ignore */ }
+  };
 
   const wishItems = products.filter((p) => wishlist.includes(p.id));
 
@@ -142,12 +167,55 @@ export default function Account() {
 
           {tab === "address" && (
             <div>
-              <h2 className="font-display text-3xl text-white">SAVED ADDRESSES</h2>
-              <div className="mt-6 rounded-2xl border border-[#2a2a30] bg-[#131316] p-5">
-                <div className="flex items-center gap-2"><MapPin size={16} className="text-lime" /><span className="font-grotesk font-semibold text-white">Home</span></div>
-                <p className="mt-2 text-sm text-[#c9c9cf]">221B Street Style Lane, Bandra West, Mumbai, Maharashtra – 400050</p>
-                <p className="mt-1 text-sm text-[#8b8b93]">Phone: +91 98765 43210</p>
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-3xl text-white">SAVED ADDRESSES</h2>
+                {!showAddrForm && (
+                  <button onClick={() => setShowAddrForm(true)} data-testid="account-add-address"
+                    className="flex items-center gap-1.5 rounded-full bg-lime px-4 py-2 text-sm font-bold text-[#0a0a0b] hover:bg-lime-dim">
+                    <Plus size={16} /> Add Address
+                  </button>
+                )}
               </div>
+
+              {showAddrForm && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 rounded-2xl border border-[#2a2a30] bg-[#131316] p-6" data-testid="account-address-form">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <AField label="Label (Home / Work)" value={addrForm.label} onChange={(v) => setAddrForm({ ...addrForm, label: v })} />
+                    <AField label="Full Name" value={addrForm.name} onChange={(v) => setAddrForm({ ...addrForm, name: v })} testid="acc-addr-name" />
+                    <AField label="Phone" value={addrForm.phone} onChange={(v) => setAddrForm({ ...addrForm, phone: v.replace(/\D/g, "").slice(0, 10) })} testid="acc-addr-phone" />
+                    <AField label="Pincode" value={addrForm.pincode} onChange={(v) => setAddrForm({ ...addrForm, pincode: v.replace(/\D/g, "").slice(0, 6) })} testid="acc-addr-pincode" />
+                    <div className="sm:col-span-2"><AField label="Address Line" value={addrForm.line} onChange={(v) => setAddrForm({ ...addrForm, line: v })} testid="acc-addr-line" /></div>
+                    <ASelect label="City" value={addrForm.city} onChange={(v) => setAddrForm({ ...addrForm, city: v })} options={INDIAN_CITIES} testid="acc-addr-city" />
+                    <ASelect label="State / UT" value={addrForm.stateName} onChange={(v) => setAddrForm({ ...addrForm, stateName: v })} options={INDIAN_STATES} testid="acc-addr-state" />
+                  </div>
+                  <div className="mt-5 flex gap-3">
+                    <button onClick={() => { setShowAddrForm(false); setAddrForm(EMPTY_ADDR); }} className="rounded-full border border-[#2a2a30] px-5 py-2.5 text-sm font-semibold text-white hover:border-lime">Cancel</button>
+                    <button onClick={saveAddress} disabled={!addrValid} data-testid="acc-addr-save"
+                      className="rounded-full bg-lime px-6 py-2.5 text-sm font-bold text-[#0a0a0b] transition enabled:hover:bg-lime-dim disabled:opacity-40">Save Address</button>
+                  </div>
+                </motion.div>
+              )}
+
+              {addresses.length ? (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2" data-testid="account-address-list">
+                  {addresses.map((a) => (
+                    <div key={a.id} className="relative rounded-2xl border border-[#2a2a30] bg-[#131316] p-5">
+                      <button onClick={() => deleteAddress(a.id)} data-testid={`acc-addr-delete-${a.id}`}
+                        className="absolute right-4 top-4 text-[#8b8b93] transition hover:text-magenta"><Trash2 size={16} /></button>
+                      <div className="flex items-center gap-2"><MapPin size={16} className="text-lime" /><span className="font-grotesk font-semibold text-white">{a.label}</span></div>
+                      <p className="mt-2 text-sm text-[#c9c9cf]">{a.name}</p>
+                      <p className="mt-1 text-sm text-[#c9c9cf]">{a.line}, {a.city}, {a.stateName} – {a.pincode}</p>
+                      <p className="mt-1 text-sm text-[#8b8b93]">Phone: {a.phone}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : !showAddrForm && (
+                <div className="mt-6 grid place-items-center rounded-2xl border border-dashed border-[#2a2a30] py-16 text-center">
+                  <MapPin size={40} className="text-[#2a2a30]" />
+                  <p className="mt-3 text-white">No saved addresses yet</p>
+                  <button onClick={() => setShowAddrForm(true)} className="mt-3 rounded-full bg-lime px-5 py-2 text-sm font-bold text-[#0a0a0b]">Add your first address</button>
+                </div>
+              )}
             </div>
           )}
 
@@ -162,6 +230,30 @@ export default function Account() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+
+function AField({ label, value, onChange, testid }) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-grotesk text-sm text-[#c9c9cf]">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} data-testid={testid}
+        className="w-full rounded-lg border border-[#2a2a30] bg-[#0f0f12] px-3 py-2.5 text-sm text-white outline-none transition focus:border-lime" />
+    </div>
+  );
+}
+
+function ASelect({ label, value, onChange, options, testid }) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-grotesk text-sm text-[#c9c9cf]">{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} data-testid={testid}
+        className={`w-full appearance-none rounded-lg border border-[#2a2a30] bg-[#0f0f12] px-3 py-2.5 text-sm outline-none transition focus:border-lime ${value ? "text-white" : "text-[#8b8b93]"}`}>
+        <option value="">Select {label}</option>
+        {options.map((o) => <option key={o} value={o} className="text-white">{o}</option>)}
+      </select>
     </div>
   );
 }

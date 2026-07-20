@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard, Smartphone, Landmark, Wallet, Banknote, ShieldCheck, Lock,
-  Loader2, CheckCircle2, ChevronRight, Clock,
+  Loader2, CheckCircle2, ChevronRight, Clock, CalendarClock,
 } from "lucide-react";
 import { formatINR } from "../mock/mock";
 import { INDIAN_BANKS } from "../mock/india";
@@ -52,12 +52,16 @@ function formatCardNumber(value, brand) {
 const METHODS = [
   { id: "upi", label: "UPI", sub: "GPay / PhonePe / Paytm / BHIM", icon: Smartphone, tag: "Recommended" },
   { id: "card", label: "Cards", sub: "Visa, Mastercard, Amex, RuPay", icon: CreditCard },
+  { id: "emi", label: "No Cost EMI", sub: "3 / 6 / 9 / 12 months", icon: CalendarClock, minAmount: 3000, tag: "0% interest" },
   { id: "razorpay", label: "Razorpay", sub: "Secure quick checkout", icon: ShieldCheck },
   { id: "paytm", label: "Paytm", sub: "Wallet & Postpaid", icon: Wallet },
   { id: "netbanking", label: "Netbanking", sub: "All Indian banks", icon: Landmark },
   { id: "wallet", label: "Wallets", sub: "Amazon Pay, Mobikwik", icon: Wallet },
   { id: "cod", label: "Cash on Delivery", sub: "Pay when it arrives", icon: Banknote },
 ];
+
+const EMI_BANKS = ["HDFC Bank", "ICICI Bank", "Axis Bank", "SBI Card", "Kotak Bank"];
+const EMI_TENURES = [3, 6, 9, 12];
 
 const CardBrandIcon = ({ brand }) => {
   const map = { visa: <Visa />, mastercard: <Mastercard />, amex: <Amex />, rupay: <RuPay />, diners: <Diners /> };
@@ -75,6 +79,9 @@ export default function PaymentGateway({ amount, onSuccess, onBack }) {
   const [upiId, setUpiId] = useState("");
   const [bank, setBank] = useState("");
   const [walletApp, setWalletApp] = useState("amazonpay");
+  const [emi, setEmi] = useState({ bank: "HDFC Bank", months: 6 });
+
+  const availableMethods = useMemo(() => METHODS.filter((m) => !m.minAmount || amount >= m.minAmount), [amount]);
 
   const cardBrand = useMemo(() => detectCard(card.number), [card.number]);
 
@@ -123,7 +130,7 @@ export default function PaymentGateway({ amount, onSuccess, onBack }) {
         <div className="border-b border-slate-100 bg-slate-50 p-2 md:border-b-0 md:border-r">
           <p className="hidden px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 md:block">Payment Options</p>
           <div className="flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">
-            {METHODS.map((m) => (
+            {availableMethods.map((m) => (
               <button key={m.id} onClick={() => { setMethod(m.id); setErr(""); }}
                 data-testid={`pay-method-${m.id}`}
                 className={`flex min-w-[150px] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition md:min-w-0 ${method === m.id ? "bg-white shadow-sm ring-1 ring-[#3395FF]" : "hover:bg-white/70"}`}>
@@ -162,6 +169,40 @@ export default function PaymentGateway({ amount, onSuccess, onBack }) {
                       onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, cardBrand === "amex" ? 4 : 3) })} />
                   </div>
                   <PayBtn amount={amount} onClick={payCard} testid="card-pay-btn" />
+                </div>
+              )}
+
+              {method === "emi" && (
+                <div className="space-y-4" data-testid="pay-panel-emi">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold">No Cost EMI</h3>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">0% interest</span>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500">Select bank / card issuer</label>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      {EMI_BANKS.map((b) => (
+                        <button key={b} onClick={() => setEmi({ ...emi, bank: b })} data-testid={`emi-bank-${b}`}
+                          className={`rounded-lg border px-2 py-2 text-[11px] font-medium transition ${emi.bank === b ? "border-[#3395FF] bg-[#3395FF]/5" : "border-slate-200 hover:border-slate-300"}`}>{b}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500">Choose tenure</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {EMI_TENURES.map((mo) => (
+                        <button key={mo} onClick={() => setEmi({ ...emi, months: mo })} data-testid={`emi-tenure-${mo}`}
+                          className={`rounded-xl border p-3 text-center transition ${emi.months === mo ? "border-[#3395FF] bg-[#3395FF]/5 ring-1 ring-[#3395FF]" : "border-slate-200 hover:border-slate-300"}`}>
+                          <p className="text-sm font-bold text-slate-900">{formatINR(Math.round(amount / mo))}</p>
+                          <p className="text-[11px] text-slate-500">/mo × {mo}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700">
+                    {emi.months} months × {formatINR(Math.round(amount / emi.months))} · Total {formatINR(amount)} · No interest, no extra cost.
+                  </p>
+                  <PayBtn amount={amount} onClick={() => runPayment(`No Cost EMI · ${emi.bank} · ${emi.months} mo`)} label={`Pay ${formatINR(Math.round(amount / emi.months))}/mo via EMI`} testid="emi-pay-btn" />
                 </div>
               )}
 
