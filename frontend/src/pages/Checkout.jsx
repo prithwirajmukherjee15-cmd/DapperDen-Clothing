@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, CreditCard, Truck, Wallet, Landmark, PartyPopper } from "lucide-react";
+import { Check, Truck, ShieldCheck, PartyPopper, MapPin } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import api from "../api";
 import { formatINR } from "../mock/mock";
+import { INDIAN_CITIES, INDIAN_STATES } from "../mock/india";
+import PaymentGateway from "../components/PaymentGateway";
 
 const STEPS = ["Address", "Payment", "Confirmation"];
 
@@ -16,14 +18,17 @@ export default function Checkout() {
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [addr, setAddr] = useState({ name: "", phone: "", pincode: "", line: "", city: "", stateName: "" });
-  const [pay, setPay] = useState("upi");
+  const [payLabel, setPayLabel] = useState("");
+  const [paidAmount, setPaidAmount] = useState(0);
   const [orderId, setOrderId] = useState("DD" + Math.floor(100000 + Math.random() * 900000));
 
   const total = state?.total ?? subtotal;
 
-  const canProceed = addr.name && addr.phone.length >= 10 && addr.pincode.length >= 6 && addr.line && addr.city;
+  const canProceed = addr.name && addr.phone.length >= 10 && addr.pincode.length >= 6 && addr.line && addr.city && addr.stateName;
 
-  const placeOrder = async () => {
+  const placeOrder = async (label) => {
+    setPayLabel(label);
+    setPaidAmount(total);
     if (user) {
       try {
         const payload = {
@@ -33,7 +38,7 @@ export default function Checkout() {
           discount: state?.discount ?? 0,
           shipping: state?.shipping ?? 0,
           coupon: state?.coupon ?? null,
-          payment_method: pay,
+          payment_method: label,
           address: addr,
         };
         const res = await api.post("/orders", payload);
@@ -77,14 +82,17 @@ export default function Checkout() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h2 className="flex items-center gap-2 font-display text-3xl text-white"><Truck size={24} className="text-lime" /> DELIVERY ADDRESS</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field label="Full Name" value={addr.name} onChange={(v) => setAddr({ ...addr, name: v })} />
-              <Field label="Phone" value={addr.phone} onChange={(v) => setAddr({ ...addr, phone: v.replace(/\D/g, "").slice(0, 10) })} />
-              <Field label="Pincode" value={addr.pincode} onChange={(v) => setAddr({ ...addr, pincode: v.replace(/\D/g, "").slice(0, 6) })} />
-              <Field label="City" value={addr.city} onChange={(v) => setAddr({ ...addr, city: v })} />
-              <div className="sm:col-span-2"><Field label="Address Line" value={addr.line} onChange={(v) => setAddr({ ...addr, line: v })} /></div>
-              <Field label="State" value={addr.stateName} onChange={(v) => setAddr({ ...addr, stateName: v })} />
+              <Field label="Full Name" value={addr.name} onChange={(v) => setAddr({ ...addr, name: v })} testid="addr-name" />
+              <Field label="Phone" value={addr.phone} onChange={(v) => setAddr({ ...addr, phone: v.replace(/\D/g, "").slice(0, 10) })} testid="addr-phone" />
+              <div className="sm:col-span-2">
+                <Field label="Flat / House No, Building, Street, Area" value={addr.line} onChange={(v) => setAddr({ ...addr, line: v })} testid="addr-line" icon={<MapPin size={15} className="text-lime" />} />
+              </div>
+              <Field label="Pincode" value={addr.pincode} onChange={(v) => setAddr({ ...addr, pincode: v.replace(/\D/g, "").slice(0, 6) })} testid="addr-pincode" />
+              <Select label="City" value={addr.city} onChange={(v) => setAddr({ ...addr, city: v })} options={INDIAN_CITIES} placeholder="Select your city" testid="addr-city" />
+              <Select label="State / UT" value={addr.stateName} onChange={(v) => setAddr({ ...addr, stateName: v })} options={INDIAN_STATES} placeholder="Select state" testid="addr-state" />
+              <Field label="Country" value="India" onChange={() => {}} disabled testid="addr-country" />
             </div>
-            <button disabled={!canProceed} onClick={() => setStep(1)}
+            <button disabled={!canProceed} onClick={() => setStep(1)} data-testid="continue-to-payment-btn"
               className="mt-8 w-full rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition enabled:hover:bg-lime-dim disabled:cursor-not-allowed disabled:opacity-40">
               Continue to Payment
             </button>
@@ -93,48 +101,26 @@ export default function Checkout() {
 
         {step === 1 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h2 className="flex items-center gap-2 font-display text-3xl text-white"><CreditCard size={24} className="text-lime" /> PAYMENT</h2>
-            <div className="mt-6 space-y-3">
-              {[
-                { id: "upi", label: "UPI", icon: Wallet, desc: "GPay, PhonePe, Paytm" },
-                { id: "card", label: "Credit / Debit Card", icon: CreditCard, desc: "Visa, Mastercard, RuPay" },
-                { id: "cod", label: "Cash on Delivery", icon: Landmark, desc: "Pay when it arrives" },
-              ].map((m) => (
-                <button key={m.id} onClick={() => setPay(m.id)}
-                  className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${pay === m.id ? "border-lime bg-lime/5" : "border-[#2a2a30] hover:border-[#3a3a42]"}`}>
-                  <m.icon size={22} className={pay === m.id ? "text-lime" : "text-[#8b8b93]"} />
-                  <div className="flex-1">
-                    <p className="font-grotesk font-semibold text-white">{m.label}</p>
-                    <p className="text-sm text-[#8b8b93]">{m.desc}</p>
-                  </div>
-                  <span className={`grid h-5 w-5 place-items-center rounded-full border ${pay === m.id ? "border-lime" : "border-[#2a2a30]"}`}>
-                    {pay === m.id && <span className="h-2.5 w-2.5 rounded-full bg-lime" />}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div className="mt-6 flex items-center justify-between rounded-2xl border border-[#2a2a30] bg-[#131316] p-4">
-              <span className="font-grotesk text-white">Amount payable</span>
-              <span className="font-display text-2xl text-white">{formatINR(total)}</span>
-            </div>
-            <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(0)} className="flex-1 rounded-full border border-[#2a2a30] py-3.5 font-grotesk font-semibold text-white hover:border-lime">Back</button>
-              <button onClick={placeOrder} className="flex-1 rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] hover:bg-lime-dim">Place Order</button>
+            <h2 className="flex items-center gap-2 font-display text-3xl text-white"><ShieldCheck size={24} className="text-lime" /> SECURE PAYMENT</h2>
+            <p className="mt-1 text-sm text-[#8b8b93]">Delivering to {addr.name}, {addr.city}, {addr.stateName} — {addr.pincode}</p>
+            <div className="mt-6">
+              <PaymentGateway amount={total} onSuccess={placeOrder} onBack={() => setStep(0)} />
             </div>
           </motion.div>
         )}
 
         {step === 2 && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center" data-testid="order-confirmation">
             <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-lime/15">
               <PartyPopper size={38} className="text-lime" />
             </div>
             <h2 className="mt-6 font-display text-4xl text-white">ORDER CONFIRMED!</h2>
-            <p className="mt-2 text-[#c9c9cf]">Thanks for the order. Your drip is on the way.</p>
+            <p className="mt-2 text-[#c9c9cf]">Thanks {addr.name?.split(" ")[0] || "there"}. Your drip is on the way.</p>
             <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-[#2a2a30] bg-[#131316] p-5 text-left">
               <Line l="Order ID" v={orderId} />
-              <Line l="Amount Paid" v={formatINR(total)} />
-              <Line l="Payment" v={pay.toUpperCase()} />
+              <Line l="Amount Paid" v={formatINR(paidAmount)} />
+              <Line l="Payment" v={payLabel || "Paid"} />
+              <Line l="Ship to" v={`${addr.city}, ${addr.stateName}`} />
               <Line l="Delivery" v="3–5 business days" />
             </div>
             <div className="mt-6 flex justify-center gap-3">
@@ -148,15 +134,32 @@ export default function Checkout() {
   );
 }
 
-function Field({ label, value, onChange }) {
+function Field({ label, value, onChange, testid, disabled, icon }) {
   return (
     <div>
       <label className="mb-1.5 block font-grotesk text-sm text-[#c9c9cf]">{label}</label>
-      <input value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[#2a2a30] bg-[#131316] px-3 py-2.5 text-sm text-white outline-none transition focus:border-lime" />
+      <div className="relative">
+        {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2">{icon}</span>}
+        <input value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} data-testid={testid}
+          className={`w-full rounded-lg border border-[#2a2a30] bg-[#131316] py-2.5 text-sm text-white outline-none transition focus:border-lime disabled:opacity-60 ${icon ? "pl-9 pr-3" : "px-3"}`} />
+      </div>
     </div>
   );
 }
+
+function Select({ label, value, onChange, options, placeholder, testid }) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-grotesk text-sm text-[#c9c9cf]">{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} data-testid={testid}
+        className={`w-full appearance-none rounded-lg border border-[#2a2a30] bg-[#131316] px-3 py-2.5 text-sm outline-none transition focus:border-lime ${value ? "text-white" : "text-[#8b8b93]"}`}>
+        <option value="">{placeholder}</option>
+        {options.map((o) => <option key={o} value={o} className="text-white">{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function Line({ l, v }) {
   return (
     <div className="flex items-center justify-between border-b border-[#2a2a30]/60 py-2 last:border-0">
