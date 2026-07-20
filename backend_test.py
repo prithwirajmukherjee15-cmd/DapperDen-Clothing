@@ -136,13 +136,13 @@ def test_no_duplicate_primary_images(products):
 def test_new_slugs():
     """NEW: Test sample new slugs resolve correctly"""
     slugs = [
+        "starforge-tee",
         "titan-oversized",
         "shogun-hoodie", 
         "ninja-jogger",
         "sensei-shirt",
         "neon-shades",
-        "volt-sneakers",
-        "orbit-beanie"
+        "volt-sneakers"
     ]
     
     all_passed = True
@@ -152,13 +152,35 @@ def test_new_slugs():
             resp = requests.get(f"{BASE_URL}/products/{slug}", timeout=10)
             if resp.status_code == 200:
                 product = resp.json()
-                required_fields = ["slug", "name", "price", "images", "colors", "sizes"]
+                # Note: 'colors' field was intentionally removed - do NOT check for it
+                required_fields = ["id", "slug", "name", "category", "collection", "price", 
+                                 "mrp", "discount", "images", "sizes", "rating", "reviews", "description"]
                 has_all = all(field in product for field in required_fields)
-                if has_all and product.get("slug") == slug:
+                
+                # Verify images and sizes are non-empty lists
+                images_valid = isinstance(product.get("images"), list) and len(product.get("images", [])) > 0
+                sizes_valid = isinstance(product.get("sizes"), list) and len(product.get("sizes", [])) > 0
+                
+                # Verify 'colors' field is NOT present (intentionally removed)
+                colors_absent = "colors" not in product
+                
+                if has_all and images_valid and sizes_valid and colors_absent and product.get("slug") == slug:
                     log_test(f"NEW: GET /api/products/{slug} returns valid product", True)
                 else:
+                    issues = []
+                    if not has_all:
+                        missing = [f for f in required_fields if f not in product]
+                        issues.append(f"Missing fields: {missing}")
+                    if not images_valid:
+                        issues.append("images not a non-empty list")
+                    if not sizes_valid:
+                        issues.append("sizes not a non-empty list")
+                    if not colors_absent:
+                        issues.append("'colors' field present (should be removed)")
+                    if product.get("slug") != slug:
+                        issues.append("slug mismatch")
                     log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
-                            "Missing required fields or slug mismatch")
+                            "; ".join(issues))
                     all_passed = False
             else:
                 log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
@@ -169,6 +191,61 @@ def test_new_slugs():
             all_passed = False
     
     return all_passed
+
+
+def test_all_images_globally_unique(products):
+    """NEW: Test ALL images across ALL products are globally unique (no image reused)"""
+    try:
+        if not products:
+            log_test("NEW: ALL images globally unique (no reuse)", False, "No products provided")
+            return False
+        
+        all_images = []
+        for p in products:
+            images = p.get("images", [])
+            all_images.extend(images)
+        
+        # Check for duplicates
+        unique_images = set(all_images)
+        
+        if len(all_images) == len(unique_images):
+            log_test("NEW: ALL images globally unique (no reuse)", True, 
+                    f"Total images: {len(all_images)}, all unique")
+            return True
+        else:
+            duplicates = len(all_images) - len(unique_images)
+            log_test("NEW: ALL images globally unique (no reuse)", False, 
+                    f"Found {duplicates} duplicate(s). Total: {len(all_images)}, Unique: {len(unique_images)}")
+            return False
+    except Exception as e:
+        log_test("NEW: ALL images globally unique (no reuse)", False, str(e))
+        return False
+
+
+def test_multiple_colourway_images(products):
+    """NEW: Test at least 50 of 60 products have multiple colourway images (len(images) >= 2)"""
+    try:
+        if not products:
+            log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, "No products provided")
+            return False
+        
+        products_with_multiple_images = 0
+        for p in products:
+            images = p.get("images", [])
+            if len(images) >= 2:
+                products_with_multiple_images += 1
+        
+        if products_with_multiple_images >= 50:
+            log_test("NEW: At least 50 of 60 products have len(images) >= 2", True, 
+                    f"{products_with_multiple_images} products have multiple colourway images")
+            return True
+        else:
+            log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, 
+                    f"Only {products_with_multiple_images} products have multiple images (need >= 50)")
+            return False
+    except Exception as e:
+        log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, str(e))
+        return False
 
 
 def test_nonexistent_slug():
@@ -626,13 +703,21 @@ def main():
     if products:
         test_no_duplicate_primary_images(products)
     
-    # 4. Test new slugs
+    # 4. Test ALL images globally unique (no reuse)
+    if products:
+        test_all_images_globally_unique(products)
+    
+    # 5. Test at least 50 of 60 products have multiple colourway images
+    if products:
+        test_multiple_colourway_images(products)
+    
+    # 6. Test new slugs (including field validation)
     test_new_slugs()
     
-    # 5. Test non-existent slug
+    # 7. Test non-existent slug
     test_nonexistent_slug()
     
-    # 6. Test collection filter
+    # 8. Test collection filter
     test_collection_cosmic_heroes()
     
     # ========================================================================

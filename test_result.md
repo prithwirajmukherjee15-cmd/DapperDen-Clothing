@@ -122,6 +122,9 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "✅ REGRESSION + NEW VERIFICATION COMPLETE (30/30 tests passed). NEW: Catalog expanded to 60 products with exactly 10 per category (t-shirts, oversized, hoodies, joggers, shirts, accessories). All 60 products have unique primary images (images[0]). All new slugs verified: titan-oversized, shogun-hoodie, ninja-jogger, sensei-shirt, neon-shades, volt-sneakers, orbit-beanie. Collection filter cosmic-heroes returns 11 products. Non-existent slug returns 404. REGRESSION: All previous functionality maintained - search (hoodie query returns 10 results, empty query returns empty array), coupon validation (DAPPER10, FLAT300 with min check, invalid codes), auth protection (401 without token), auth with token (user data, orders, wishlist). Test user: test-user-1784563122."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ COMPREHENSIVE BUG FIX VERIFICATION COMPLETE (32/32 tests passed). VERIFIED: (1) Exactly 60 products returned by GET /api/products. (2) Each category (t-shirts, oversized, hoodies, joggers, shirts, accessories) returns exactly 10 products via ?category= filter. (3) All 60 products have globally unique primary images (images[0]). (4) ALL 112 images across ALL 60 products are globally unique - no image reused by any product. (5) 52 of 60 products have multiple colourway images (len(images) >= 2), exceeding the 50 minimum requirement. (6) All products have required fields: id, slug, name, category, collection, price, mrp, discount, images (non-empty list), sizes (non-empty list), rating, reviews, description. CONFIRMED: 'colors' field intentionally removed and absent from all products. (7) Sample slugs verified: starforge-tee, titan-oversized, shogun-hoodie, ninja-jogger, sensei-shirt, neon-shades, volt-sneakers all return 200 with valid data. Non-existent slug returns 404. REGRESSION MAINTAINED: Search (hoodie query returns 10 results, empty query returns empty array), coupon validation (DAPPER10 10% on 2000 = 200 discount, FLAT300 below min 1000 = invalid, FLAT300 above min 2000 = 300 discount, bogus code = invalid), auth protection (/auth/me and /orders without token return 401), auth with Bearer token (/auth/me returns user, orders create with order_id DD166203 and status Confirmed, orders list working, wishlist toggle add/remove working). Test user: test-user-1784564630. ALL BACKEND FUNCTIONALITY PRODUCTION-READY. NO ISSUES FOUND."
   - task: "Coupon validation"
     implemented: true
     working: true
@@ -207,7 +210,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: false
 
 test_plan:
@@ -225,3 +228,5 @@ agent_communication:
     -message: "Catalog expanded to 60 products (10 per category). Please run regression + new verification tests."
     -agent: "testing"
     -message: "✅ ALL REGRESSION + NEW VERIFICATION TESTS PASSED (30/30). NEW FEATURES VERIFIED: (1) 60 products total - confirmed. (2) Category filters - each of 6 categories (t-shirts, oversized, hoodies, joggers, shirts, accessories) returns exactly 10 products. (3) No duplicate primary images - all 60 products have unique images[0]. (4) New slugs verified - titan-oversized, shogun-hoodie, ninja-jogger, sensei-shirt, neon-shades, volt-sneakers, orbit-beanie all return 200 with valid data. (5) Non-existent slug returns 404. (6) Collection filter cosmic-heroes returns 11 products. REGRESSION MAINTAINED: (7) Search with query 'hoodie' returns 10 results, empty query returns empty array. (8) Coupon validation - DAPPER10 (10% on 2000 = 200 discount), FLAT300 below min (1000 = invalid), FLAT300 above min (2000 = 300 discount), bogus code = invalid. (9) Auth protection - /auth/me and /orders without token return 401. (10) Auth with Bearer token - /auth/me returns user, orders create (order_id DD274152, status Confirmed) and list working, wishlist toggle add/remove working. Test user: test-user-1784563122. ALL BACKEND FUNCTIONALITY PRODUCTION-READY. NO ISSUES FOUND."
+    -agent: "testing"
+    -message: "✅ COMPREHENSIVE BUG FIX VERIFICATION COMPLETE (32/32 tests passed). All requirements from review_request verified successfully. KEY FINDINGS: (1) Exactly 60 products with 10 per category. (2) All primary images globally unique. (3) ALL 112 images across ALL products globally unique - no reuse. (4) 52 of 60 products have multiple colourway images (exceeds 50 minimum). (5) All required fields present, 'colors' field correctly removed. (6) All sample slugs working, 404 for non-existent. (7-10) All regression tests passing. Test user: test-user-1784564630. Backend is production-ready with no issues."

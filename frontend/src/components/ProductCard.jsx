@@ -62,7 +62,7 @@ export default function ProductCard({ product }) {
           <button
             onClick={(e) => {
               e.preventDefault();
-              addToCart(product, "M", product.colors[0].name, 1);
+              addToCart(product, "M", "Colour 1", 1);
             }}
             className="absolute inset-x-3 bottom-3 flex translate-y-14 items-center justify-center gap-2 rounded-lg bg-lime py-2.5 text-sm font-bold text-[#0a0a0b] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
           >

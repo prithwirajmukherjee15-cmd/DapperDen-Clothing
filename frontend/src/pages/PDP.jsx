@@ -19,7 +19,6 @@ export default function PDP() {
 
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState(null);
-  const [color, setColor] = useState(product ? product.colors[0].name : null);
   const [qty, setQty] = useState(1);
   const [sizeGuide, setSizeGuide] = useState(false);
   const [err, setErr] = useState(false);
@@ -40,7 +39,7 @@ export default function PDP() {
 
   const handleAdd = (buyNow = false) => {
     if (!size) { setErr(true); toast({ title: "Please select a size" }); return; }
-    addToCart(product, size, color, qty);
+    addToCart(product, size, `Colour ${activeImg + 1}`, qty);
     if (buyNow) navigate("/cart");
     else toast({ title: "Added to bag", description: `${product.name} • ${size}` });
   };
@@ -94,18 +93,20 @@ export default function PDP() {
           </div>
           <p className="mt-1 text-xs text-[#8b8b93]">Inclusive of all taxes</p>
 
-          {/* Color */}
-          <div className="mt-7">
-            <p className="mb-2 font-grotesk text-sm font-semibold text-white">Color: <span className="text-[#8b8b93]">{color}</span></p>
-            <div className="flex gap-2">
-              {product.colors.map((c) => (
-                <button key={c.name} onClick={() => setColor(c.name)}
-                  className={`grid h-9 w-9 place-items-center rounded-full border-2 transition ${color === c.name ? "border-lime" : "border-[#2a2a30]"}`}>
-                  <span className="h-6 w-6 rounded-full" style={{ background: c.hex }} />
-                </button>
-              ))}
+          {/* Colourways (image variants) */}
+          {product.images.length > 1 && (
+            <div className="mt-7">
+              <p className="mb-2 font-grotesk text-sm font-semibold text-white">Colour: <span className="text-[#8b8b93]">{activeImg + 1} of {product.images.length}</span></p>
+              <div className="flex flex-wrap gap-2">
+                {product.images.map((img, i) => (
+                  <button key={i} onClick={() => setActiveImg(i)}
+                    className={`h-16 w-14 overflow-hidden rounded-lg border-2 transition ${activeImg === i ? "border-lime" : "border-[#2a2a30] hover:border-[#4a4a52]"}`}>
+                    <img src={img} alt={`${product.name} colourway ${i + 1}`} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Size */}
           <div className="mt-6">

@@ -40,11 +40,11 @@ const P = {
 };
 
 export const CATEGORIES = [
-  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: "https://images.pexels.com/photos/36942017/pexels-photo-36942017.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: "https://images.unsplash.com/photo-1571455786673-9d9d6c194f90?w=800&q=80" },
   { id: "oversized", name: "Oversized", slug: "oversized", image: "https://images.pexels.com/photos/36942018/pexels-photo-36942018.jpeg?auto=compress&cs=tinysrgb&w=800" },
-  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: "https://images.pexels.com/photos/8346261/pexels-photo-8346261.jpeg?auto=compress&cs=tinysrgb&w=800" },
-  { id: "joggers", name: "Joggers", slug: "joggers", image: "https://images.pexels.com/photos/5696896/pexels-photo-5696896.jpeg?auto=compress&cs=tinysrgb&w=800" },
-  { id: "shirts", name: "Shirts", slug: "shirts", image: "https://images.pexels.com/photos/28938765/pexels-photo-28938765.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: "https://images.unsplash.com/photo-1564557287817-3785e38ec1f5?w=800&q=80" },
+  { id: "joggers", name: "Joggers", slug: "joggers", image: "https://images.unsplash.com/photo-1555412590-954a889ccb90?w=800&q=80" },
+  { id: "shirts", name: "Shirts", slug: "shirts", image: "https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?w=800&q=80" },
   { id: "accessories", name: "Accessories", slug: "accessories", image: "https://images.unsplash.com/photo-1533603531139-2c4d04df8f16?w=800&q=80" },
 ];
 
