@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
-from catalog import CATEGORIES, COLLECTIONS, PRODUCTS, COUPONS
+from catalog import CATEGORIES, COLLECTIONS, PRODUCTS, COUPONS, CATEGORIES_BY_GENDER
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -164,13 +164,20 @@ async def get_catalog():
 
 
 @api_router.get("/products")
-async def get_products(category: Optional[str] = None, collection: Optional[str] = None):
+async def get_products(category: Optional[str] = None, collection: Optional[str] = None, gender: Optional[str] = None):
     items = PRODUCTS
+    if gender:
+        items = [p for p in items if p.get("gender", "men") == gender]
     if category:
         items = [p for p in items if p["category"] == category]
     if collection:
         items = [p for p in items if p["collection"] == collection]
     return items
+
+
+@api_router.get("/categories")
+async def get_categories(gender: str = "men"):
+    return CATEGORIES_BY_GENDER.get(gender, CATEGORIES)
 
 
 @api_router.get("/products/{slug}")

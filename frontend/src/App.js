@@ -44,8 +44,12 @@ function AppRoutes() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/men" element={<CategoryHub />} />
-          <Route path="/men/:category" element={<PLP mode="category" />} />
+          <Route path="/men" element={<CategoryHub gender="men" />} />
+          <Route path="/men/:category" element={<PLP mode="category" gender="men" />} />
+          <Route path="/women" element={<CategoryHub gender="women" />} />
+          <Route path="/women/:category" element={<PLP mode="category" gender="women" />} />
+          <Route path="/kids" element={<CategoryHub gender="kids" />} />
+          <Route path="/kids/:category" element={<PLP mode="category" gender="kids" />} />
           <Route path="/collection/:slug" element={<PLP mode="collection" />} />
           <Route path="/product/:slug" element={<PDP />} />
           <Route path="/cart" element={<Cart />} />

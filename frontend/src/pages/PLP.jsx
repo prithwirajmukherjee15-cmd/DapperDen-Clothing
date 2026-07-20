@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X, Check } from "lucide-react";
-import { CATEGORIES, COLLECTIONS } from "../mock/mock";
+import { CATEGORIES_BY_GENDER, COLLECTIONS, GENDER_LABELS } from "../mock/mock";
 import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
@@ -23,7 +23,7 @@ const SORTS = [
   { id: "discount", label: "Biggest Discount" },
 ];
 
-export default function PLP({ mode }) {
+export default function PLP({ mode, gender = "men" }) {
   const params = useParams();
   const { products, getProductsByCategory, getProductsByCollection } = useData();
   const slug = mode === "collection" ? params.slug : params.category;
@@ -31,13 +31,13 @@ export default function PLP({ mode }) {
   const meta =
     mode === "collection"
       ? COLLECTIONS.find((c) => c.slug === slug)
-      : CATEGORIES.find((c) => c.slug === slug);
+      : (CATEGORIES_BY_GENDER[gender] || CATEGORIES_BY_GENDER.men).find((c) => c.slug === slug);
 
   const base = useMemo(() => {
     if (!slug) return products;
-    return mode === "collection" ? getProductsByCollection(slug) : getProductsByCategory(slug);
+    return mode === "collection" ? getProductsByCollection(slug) : getProductsByCategory(slug, gender);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, mode, products]);
+  }, [slug, mode, gender, products]);
 
   const [sizes, setSizes] = useState([]);
   const [maxPrice, setMaxPrice] = useState(3600);
@@ -106,7 +106,7 @@ export default function PLP({ mode }) {
         </section>
       ) : (
         <div className="mx-auto max-w-7xl px-5 pt-10">
-          <p className="font-grotesk text-sm text-[#8b8b93]">Men / {title}</p>
+          <p className="font-grotesk text-sm text-[#8b8b93]">{GENDER_LABELS[gender]} / {title}</p>
           <h1 className="mt-1 font-display text-5xl text-white">{title.toUpperCase()}</h1>
         </div>
       )}

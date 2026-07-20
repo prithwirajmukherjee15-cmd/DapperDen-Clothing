@@ -1,19 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from "lucide-react";
-import { CATEGORIES, COLLECTIONS, formatINR } from "../mock/mock";
+import { CATEGORIES_BY_GENDER, COLLECTIONS, formatINR } from "../mock/mock";
 import { useData } from "../context/DataContext";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
+const GENDERS = [
+  { key: "men", label: "Men" },
+  { key: "women", label: "Women" },
+  { key: "kids", label: "Kids" },
+];
+const FEATURE = {
+  men: { img: COLLECTIONS[0].banner, title: "COSMIC HEROES", to: "/collection/cosmic-heroes" },
+  women: { img: "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=800&q=80", title: "DRESSES & CO-ORDS", to: "/women/dresses" },
+  kids: { img: "https://images.unsplash.com/photo-1611428813653-aa606c998586?w=800&q=80", title: "LITTLE LEGENDS", to: "/kids/t-shirts" },
+};
+
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { count, wishlist } = useCart();
   const { user } = useAuth();
   const { searchProducts } = useData();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mega, setMega] = useState(false);
+  const [openGender, setOpenGender] = useState(null);
+  const [hovered, setHovered] = useState(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
   const boxRef = useRef(null);
@@ -39,78 +52,100 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#2a2a30] bg-[#0a0a0b]/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-4">
-        <button className="lg:hidden" onClick={() => setMenuOpen(true)} aria-label="menu">
+        <motion.button whileTap={{ scale: 0.85 }} className="lg:hidden" onClick={() => setMenuOpen(true)} aria-label="menu">
           <Menu className="text-white" />
-        </button>
+        </motion.button>
 
         <Link to="/" className="font-display text-2xl tracking-wide text-white shrink-0">
           DAPPER<span className="text-lime">DEN</span>
         </Link>
 
-        <nav className="ml-6 hidden items-center gap-6 lg:flex">
-          <div
-            className="relative"
-            onMouseEnter={() => setMega(true)}
-            onMouseLeave={() => setMega(false)}
-          >
-            <button className="flex items-center gap-1 font-grotesk text-sm font-medium text-white transition hover:text-lime">
-              <Link to="/men">Men</Link>
-              <ChevronDown size={14} />
-            </button>
-            <AnimatePresence>
-              {mega && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-1/2 top-full z-50 w-[720px] -translate-x-1/3 pt-4"
-                >
-                  <div className="grid grid-cols-3 gap-6 rounded-2xl border border-[#2a2a30] bg-[#131316] p-6 dd-shadow">
-                    <div>
-                      <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Categories</p>
-                      <ul className="space-y-2">
-                        {CATEGORIES.map((c) => (
-                          <li key={c.id}>
-                            <Link to={`/men/${c.slug}`} className="text-sm text-[#c9c9cf] transition hover:text-white">
-                              {c.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Collections</p>
-                      <ul className="space-y-2">
-                        {COLLECTIONS.map((c) => (
-                          <li key={c.id}>
-                            <Link to={`/collection/${c.slug}`} className="text-sm text-[#c9c9cf] transition hover:text-white">
-                              {c.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <Link to="/collection/cosmic-heroes" className="group relative overflow-hidden rounded-xl">
-                      <img src={COLLECTIONS[0].banner} alt="featured" className="h-full w-full object-cover transition group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                      <div className="absolute bottom-3 left-3">
-                        <p className="font-grotesk text-xs text-lime">Featured</p>
-                        <p className="font-display text-lg text-white">COSMIC HEROES</p>
-                      </div>
-                    </Link>
-                  </div>
+        {/* Desktop gender nav with animated underline + mega menus */}
+        <nav className="ml-6 hidden items-center gap-1 lg:flex" onMouseLeave={() => { setHovered(null); setOpenGender(null); }}>
+          {GENDERS.map((g) => {
+            const active = location.pathname.startsWith(`/${g.key}`);
+            return (
+              <div
+                key={g.key}
+                className="relative"
+                onMouseEnter={() => { setHovered(g.key); setOpenGender(g.key); }}
+              >
+                <motion.div whileTap={{ scale: 0.92 }} className="relative">
+                  <Link
+                    to={`/${g.key}`}
+                    className={`flex items-center gap-1 px-3 py-2 font-grotesk text-sm font-medium transition ${active || hovered === g.key ? "text-lime" : "text-white"}`}
+                  >
+                    {g.label}
+                    <ChevronDown size={14} className={`transition-transform ${openGender === g.key ? "rotate-180" : ""}`} />
+                  </Link>
+                  {(hovered === g.key || (active && !hovered)) && (
+                    <motion.span
+                      layoutId="navUnderline"
+                      className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-lime"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <Link to="/collection/anime-legends" className="font-grotesk text-sm font-medium text-white transition hover:text-lime">Anime</Link>
-          <Link to="/collection/neon-dreams" className="font-grotesk text-sm font-medium text-white transition hover:text-lime">Neon Dreams</Link>
-          <Link to="/men/oversized" className="font-grotesk text-sm font-medium text-magenta transition hover:text-lime">Oversized</Link>
+
+                <AnimatePresence>
+                  {openGender === g.key && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute left-0 top-full z-50 w-[720px] pt-4"
+                    >
+                      <div className="grid grid-cols-3 gap-6 rounded-2xl border border-[#2a2a30] bg-[#131316] p-6 dd-shadow">
+                        <div>
+                          <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Categories</p>
+                          <ul className="space-y-1">
+                            {(CATEGORIES_BY_GENDER[g.key] || []).map((c, i) => (
+                              <motion.li key={c.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+                                <Link to={`/${g.key}/${c.slug}`} className="block rounded-md px-2 py-1.5 text-sm text-[#c9c9cf] transition hover:bg-[#1c1c21] hover:text-white">
+                                  {c.name}
+                                </Link>
+                              </motion.li>
+                            ))}
+                            {g.key === "men" && (
+                              <motion.li initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24 }}>
+                                <Link to="/men/accessories" className="block rounded-md px-2 py-1.5 text-sm text-[#c9c9cf] transition hover:bg-[#1c1c21] hover:text-white">Accessories</Link>
+                              </motion.li>
+                            )}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Collections</p>
+                          <ul className="space-y-1">
+                            {COLLECTIONS.map((c, i) => (
+                              <motion.li key={c.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+                                <Link to={`/collection/${c.slug}`} className="block rounded-md px-2 py-1.5 text-sm text-[#c9c9cf] transition hover:bg-[#1c1c21] hover:text-white">
+                                  {c.name}
+                                </Link>
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </div>
+                        <Link to={FEATURE[g.key].to} className="group relative overflow-hidden rounded-xl">
+                          <img src={FEATURE[g.key].img} alt="featured" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent" />
+                          <div className="absolute bottom-3 left-3">
+                            <p className="font-grotesk text-xs text-lime">Featured</p>
+                            <p className="font-display text-lg text-white">{FEATURE[g.key].title}</p>
+                          </div>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </nav>
 
+        {/* Search */}
         <div ref={boxRef} className="relative ml-auto hidden max-w-xs flex-1 md:block">
-          <form onSubmit={submitSearch} className="flex items-center gap-2 rounded-full border border-[#2a2a30] bg-[#131316] px-4 py-2">
+          <form onSubmit={submitSearch} className="flex items-center gap-2 rounded-full border border-[#2a2a30] bg-[#131316] px-4 py-2 transition focus-within:border-lime">
             <Search size={16} className="text-[#8b8b93]" />
             <input
               value={q}
@@ -152,26 +187,32 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link to="/account" className="relative hidden text-white transition hover:text-lime sm:block" aria-label="account">
-            <User size={20} />
-            {user && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime" />}
-          </Link>
-          <Link to="/account" className="relative text-white transition hover:text-lime" aria-label="wishlist">
-            <Heart size={20} />
-            {wishlist.length > 0 && (
-              <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-magenta px-1 text-[10px] font-bold text-white">
-                {wishlist.length}
-              </span>
-            )}
-          </Link>
-          <Link to="/cart" className="relative text-white transition hover:text-lime" aria-label="cart">
-            <ShoppingBag size={20} />
-            {count > 0 && (
-              <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-lime px-1 text-[10px] font-bold text-[#0a0a0b]">
-                {count}
-              </span>
-            )}
-          </Link>
+          <motion.div whileTap={{ scale: 0.8 }} className="relative hidden sm:block">
+            <Link to="/account" className="text-white transition hover:text-lime" aria-label="account">
+              <User size={20} />
+              {user && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-lime" />}
+            </Link>
+          </motion.div>
+          <motion.div whileTap={{ scale: 0.8 }} className="relative">
+            <Link to="/account" className="text-white transition hover:text-lime" aria-label="wishlist">
+              <Heart size={20} />
+              {wishlist.length > 0 && (
+                <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-magenta px-1 text-[10px] font-bold text-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+          </motion.div>
+          <motion.div whileTap={{ scale: 0.8 }} className="relative">
+            <Link to="/cart" className="text-white transition hover:text-lime" aria-label="cart">
+              <ShoppingBag size={20} />
+              {count > 0 && (
+                <motion.span key={count} initial={{ scale: 0.4 }} animate={{ scale: 1 }} className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-lime px-1 text-[10px] font-bold text-[#0a0a0b]">
+                  {count}
+                </motion.span>
+              )}
+            </Link>
+          </motion.div>
         </div>
       </div>
 
@@ -193,18 +234,16 @@ export default function Navbar() {
                 <span className="font-display text-2xl text-white">DAPPER<span className="text-lime">DEN</span></span>
                 <button onClick={() => setMenuOpen(false)}><X className="text-white" /></button>
               </div>
-              <p className="mt-8 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Categories</p>
-              <ul className="mt-3 space-y-3">
-                {CATEGORIES.map((c) => (
-                  <li key={c.id}><Link onClick={() => setMenuOpen(false)} to={`/men/${c.slug}`} className="text-white">{c.name}</Link></li>
-                ))}
-              </ul>
-              <p className="mt-8 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Collections</p>
-              <ul className="mt-3 space-y-3">
-                {COLLECTIONS.map((c) => (
-                  <li key={c.id}><Link onClick={() => setMenuOpen(false)} to={`/collection/${c.slug}`} className="text-white">{c.name}</Link></li>
-                ))}
-              </ul>
+              {GENDERS.map((g) => (
+                <div key={g.key} className="mt-7">
+                  <Link onClick={() => setMenuOpen(false)} to={`/${g.key}`} className="font-display text-xl text-lime">{g.label.toUpperCase()}</Link>
+                  <ul className="mt-3 space-y-2.5">
+                    {(CATEGORIES_BY_GENDER[g.key] || []).map((c) => (
+                      <li key={c.id}><Link onClick={() => setMenuOpen(false)} to={`/${g.key}/${c.slug}`} className="text-sm text-[#c9c9cf]">{c.name}</Link></li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </motion.aside>
           </>
         )}

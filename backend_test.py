@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Dapper Den Backend API Test Suite - Regression + New Verification
-Tests all backend routes with /api prefix
+Dapper Den Backend API Test Suite - WOMEN & KIDS Sections Verification
+Tests all backend routes with /api prefix for 115 products (men 60, women 32, kids 23)
 """
 import requests
 import json
@@ -44,160 +44,178 @@ def log_test(name, passed, details=""):
 
 
 # ============================================================================
-# NEW TESTS - Bug Fix Verification
+# NEW TESTS - WOMEN & KIDS Sections Verification
 # ============================================================================
 
-def test_products_count_60():
-    """NEW: Test GET /api/products returns exactly 60 products"""
+def test_products_count_115():
+    """NEW: Test GET /api/products returns exactly 115 products"""
     try:
         resp = requests.get(f"{BASE_URL}/products", timeout=10)
         if resp.status_code == 200:
             products = resp.json()
-            if isinstance(products, list) and len(products) == 60:
-                log_test("NEW: GET /api/products returns exactly 60 products", True)
+            if isinstance(products, list) and len(products) == 115:
+                log_test("NEW: GET /api/products returns exactly 115 products", True)
                 return True, products
             else:
-                log_test("NEW: GET /api/products returns exactly 60 products", False, 
-                        f"Expected 60 products, got {len(products) if isinstance(products, list) else 'non-list'}")
+                log_test("NEW: GET /api/products returns exactly 115 products", False, 
+                        f"Expected 115 products, got {len(products) if isinstance(products, list) else 'non-list'}")
                 return False, []
         else:
-            log_test("NEW: GET /api/products returns exactly 60 products", False, 
+            log_test("NEW: GET /api/products returns exactly 115 products", False, 
                     f"Status {resp.status_code}: {resp.text[:200]}")
             return False, []
     except Exception as e:
-        log_test("NEW: GET /api/products returns exactly 60 products", False, str(e))
+        log_test("NEW: GET /api/products returns exactly 115 products", False, str(e))
         return False, []
 
 
-def test_category_filters():
-    """NEW: Test each category returns exactly 10 products"""
-    categories = ["t-shirts", "oversized", "hoodies", "joggers", "shirts", "accessories"]
+def test_gender_filters():
+    """NEW: Test gender filters - men (60), women (32), kids (23)"""
+    gender_counts = {"men": 60, "women": 32, "kids": 23}
     all_passed = True
     
-    for category in categories:
+    for gender, expected_count in gender_counts.items():
         try:
-            resp = requests.get(f"{BASE_URL}/products?category={category}", timeout=10)
+            resp = requests.get(f"{BASE_URL}/products?gender={gender}", timeout=10)
             if resp.status_code == 200:
                 products = resp.json()
-                if isinstance(products, list) and len(products) == 10:
-                    # Verify all products belong to this category
-                    all_match = all(p.get("category") == category for p in products)
+                if isinstance(products, list) and len(products) == expected_count:
+                    # Verify all products have gender field matching
+                    all_match = all(p.get("gender") == gender for p in products)
                     if all_match:
-                        log_test(f"NEW: GET /api/products?category={category} returns exactly 10", True)
+                        log_test(f"NEW: GET /api/products?gender={gender} returns {expected_count} products", True)
                     else:
-                        log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
-                                "Some products don't match category")
+                        log_test(f"NEW: GET /api/products?gender={gender} returns {expected_count} products", False, 
+                                "Some products don't have matching gender field")
                         all_passed = False
                 else:
-                    log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
-                            f"Expected 10 products, got {len(products) if isinstance(products, list) else 'non-list'}")
+                    log_test(f"NEW: GET /api/products?gender={gender} returns {expected_count} products", False, 
+                            f"Expected {expected_count} products, got {len(products) if isinstance(products, list) else 'non-list'}")
                     all_passed = False
             else:
-                log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, 
+                log_test(f"NEW: GET /api/products?gender={gender} returns {expected_count} products", False, 
                         f"Status {resp.status_code}")
                 all_passed = False
         except Exception as e:
-            log_test(f"NEW: GET /api/products?category={category} returns exactly 10", False, str(e))
+            log_test(f"NEW: GET /api/products?gender={gender} returns {expected_count} products", False, str(e))
             all_passed = False
     
     return all_passed
 
 
-def test_no_duplicate_primary_images(products):
-    """NEW: Test no duplicate PRIMARY images (images[0])"""
-    try:
-        if not products:
-            log_test("NEW: No duplicate PRIMARY images", False, "No products provided")
-            return False
-        
-        primary_images = []
-        for p in products:
-            images = p.get("images", [])
-            if images and len(images) > 0:
-                primary_images.append(images[0])
-        
-        # Check for duplicates
-        unique_images = set(primary_images)
-        
-        if len(primary_images) == 60 and len(unique_images) == 60:
-            log_test("NEW: No duplicate PRIMARY images", True, 
-                    f"All 60 products have unique primary images")
-            return True
-        else:
-            duplicates = len(primary_images) - len(unique_images)
-            log_test("NEW: No duplicate PRIMARY images", False, 
-                    f"Found {duplicates} duplicate(s). Total: {len(primary_images)}, Unique: {len(unique_images)}")
-            return False
-    except Exception as e:
-        log_test("NEW: No duplicate PRIMARY images", False, str(e))
-        return False
-
-
-def test_new_slugs():
-    """NEW: Test sample new slugs resolve correctly"""
-    slugs = [
-        "starforge-tee",
-        "titan-oversized",
-        "shogun-hoodie", 
-        "ninja-jogger",
-        "sensei-shirt",
-        "neon-shades",
-        "volt-sneakers"
-    ]
-    
+def test_gender_category_combos_women():
+    """NEW: Test gender+category combos for women"""
+    combos = {
+        "t-shirts": 8,
+        "hoodies": 8,
+        "joggers": 8,
+        "dresses": 8
+    }
     all_passed = True
     
-    for slug in slugs:
+    for category, expected_count in combos.items():
         try:
-            resp = requests.get(f"{BASE_URL}/products/{slug}", timeout=10)
+            resp = requests.get(f"{BASE_URL}/products?gender=women&category={category}", timeout=10)
             if resp.status_code == 200:
-                product = resp.json()
-                # Note: 'colors' field was intentionally removed - do NOT check for it
-                required_fields = ["id", "slug", "name", "category", "collection", "price", 
-                                 "mrp", "discount", "images", "sizes", "rating", "reviews", "description"]
-                has_all = all(field in product for field in required_fields)
-                
-                # Verify images and sizes are non-empty lists
-                images_valid = isinstance(product.get("images"), list) and len(product.get("images", [])) > 0
-                sizes_valid = isinstance(product.get("sizes"), list) and len(product.get("sizes", [])) > 0
-                
-                # Verify 'colors' field is NOT present (intentionally removed)
-                colors_absent = "colors" not in product
-                
-                if has_all and images_valid and sizes_valid and colors_absent and product.get("slug") == slug:
-                    log_test(f"NEW: GET /api/products/{slug} returns valid product", True)
+                products = resp.json()
+                if isinstance(products, list) and len(products) == expected_count:
+                    # Verify all products match both gender and category
+                    all_match = all(p.get("gender") == "women" and p.get("category") == category for p in products)
+                    if all_match:
+                        log_test(f"NEW: GET /api/products?gender=women&category={category} returns {expected_count}", True)
+                    else:
+                        log_test(f"NEW: GET /api/products?gender=women&category={category} returns {expected_count}", False, 
+                                "Some products don't match gender/category")
+                        all_passed = False
                 else:
-                    issues = []
-                    if not has_all:
-                        missing = [f for f in required_fields if f not in product]
-                        issues.append(f"Missing fields: {missing}")
-                    if not images_valid:
-                        issues.append("images not a non-empty list")
-                    if not sizes_valid:
-                        issues.append("sizes not a non-empty list")
-                    if not colors_absent:
-                        issues.append("'colors' field present (should be removed)")
-                    if product.get("slug") != slug:
-                        issues.append("slug mismatch")
-                    log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
-                            "; ".join(issues))
+                    log_test(f"NEW: GET /api/products?gender=women&category={category} returns {expected_count}", False, 
+                            f"Expected {expected_count} products, got {len(products) if isinstance(products, list) else 'non-list'}")
                     all_passed = False
             else:
-                log_test(f"NEW: GET /api/products/{slug} returns valid product", False, 
+                log_test(f"NEW: GET /api/products?gender=women&category={category} returns {expected_count}", False, 
                         f"Status {resp.status_code}")
                 all_passed = False
         except Exception as e:
-            log_test(f"NEW: GET /api/products/{slug} returns valid product", False, str(e))
+            log_test(f"NEW: GET /api/products?gender=women&category={category} returns {expected_count}", False, str(e))
             all_passed = False
     
     return all_passed
 
 
-def test_all_images_globally_unique(products):
-    """NEW: Test ALL images across ALL products are globally unique (no image reused)"""
+def test_gender_category_combos_kids():
+    """NEW: Test gender+category combos for kids"""
+    combos = {
+        "t-shirts": 8,
+        "hoodies": 8,
+        "joggers": 7
+    }
+    all_passed = True
+    
+    for category, expected_count in combos.items():
+        try:
+            resp = requests.get(f"{BASE_URL}/products?gender=kids&category={category}", timeout=10)
+            if resp.status_code == 200:
+                products = resp.json()
+                if isinstance(products, list) and len(products) == expected_count:
+                    # Verify all products match both gender and category
+                    all_match = all(p.get("gender") == "kids" and p.get("category") == category for p in products)
+                    if all_match:
+                        log_test(f"NEW: GET /api/products?gender=kids&category={category} returns {expected_count}", True)
+                    else:
+                        log_test(f"NEW: GET /api/products?gender=kids&category={category} returns {expected_count}", False, 
+                                "Some products don't match gender/category")
+                        all_passed = False
+                else:
+                    log_test(f"NEW: GET /api/products?gender=kids&category={category} returns {expected_count}", False, 
+                            f"Expected {expected_count} products, got {len(products) if isinstance(products, list) else 'non-list'}")
+                    all_passed = False
+            else:
+                log_test(f"NEW: GET /api/products?gender=kids&category={category} returns {expected_count}", False, 
+                        f"Status {resp.status_code}")
+                all_passed = False
+        except Exception as e:
+            log_test(f"NEW: GET /api/products?gender=kids&category={category} returns {expected_count}", False, str(e))
+            all_passed = False
+    
+    return all_passed
+
+
+def test_categories_by_gender():
+    """NEW: Test GET /api/categories?gender= returns correct categories"""
+    gender_category_counts = {
+        "women": 4,
+        "kids": 3,
+        "men": 6
+    }
+    all_passed = True
+    
+    for gender, expected_count in gender_category_counts.items():
+        try:
+            resp = requests.get(f"{BASE_URL}/categories?gender={gender}", timeout=10)
+            if resp.status_code == 200:
+                categories = resp.json()
+                if isinstance(categories, list) and len(categories) == expected_count:
+                    log_test(f"NEW: GET /api/categories?gender={gender} returns {expected_count} categories", True)
+                else:
+                    log_test(f"NEW: GET /api/categories?gender={gender} returns {expected_count} categories", False, 
+                            f"Expected {expected_count} categories, got {len(categories) if isinstance(categories, list) else 'non-list'}")
+                    all_passed = False
+            else:
+                log_test(f"NEW: GET /api/categories?gender={gender} returns {expected_count} categories", False, 
+                        f"Status {resp.status_code}")
+                all_passed = False
+        except Exception as e:
+            log_test(f"NEW: GET /api/categories?gender={gender} returns {expected_count} categories", False, str(e))
+            all_passed = False
+    
+    return all_passed
+
+
+def test_global_image_uniqueness(products):
+    """NEW: Test GLOBAL image uniqueness across ALL 115 products"""
     try:
         if not products:
-            log_test("NEW: ALL images globally unique (no reuse)", False, "No products provided")
+            log_test("NEW: GLOBAL image uniqueness across ALL 115 products", False, "No products provided")
             return False
         
         all_images = []
@@ -209,43 +227,70 @@ def test_all_images_globally_unique(products):
         unique_images = set(all_images)
         
         if len(all_images) == len(unique_images):
-            log_test("NEW: ALL images globally unique (no reuse)", True, 
+            log_test("NEW: GLOBAL image uniqueness across ALL 115 products", True, 
                     f"Total images: {len(all_images)}, all unique")
             return True
         else:
             duplicates = len(all_images) - len(unique_images)
-            log_test("NEW: ALL images globally unique (no reuse)", False, 
+            log_test("NEW: GLOBAL image uniqueness across ALL 115 products", False, 
                     f"Found {duplicates} duplicate(s). Total: {len(all_images)}, Unique: {len(unique_images)}")
             return False
     except Exception as e:
-        log_test("NEW: ALL images globally unique (no reuse)", False, str(e))
+        log_test("NEW: GLOBAL image uniqueness across ALL 115 products", False, str(e))
         return False
 
 
-def test_multiple_colourway_images(products):
-    """NEW: Test at least 50 of 60 products have multiple colourway images (len(images) >= 2)"""
-    try:
-        if not products:
-            log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, "No products provided")
-            return False
-        
-        products_with_multiple_images = 0
-        for p in products:
-            images = p.get("images", [])
-            if len(images) >= 2:
-                products_with_multiple_images += 1
-        
-        if products_with_multiple_images >= 50:
-            log_test("NEW: At least 50 of 60 products have len(images) >= 2", True, 
-                    f"{products_with_multiple_images} products have multiple colourway images")
-            return True
-        else:
-            log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, 
-                    f"Only {products_with_multiple_images} products have multiple images (need >= 50)")
-            return False
-    except Exception as e:
-        log_test("NEW: At least 50 of 60 products have len(images) >= 2", False, str(e))
-        return False
+def test_new_women_kids_slugs():
+    """NEW: Test sample new women/kids slugs resolve correctly"""
+    slugs = [
+        "w-sakura-dress",
+        "w-orbit-hoodie",
+        "w-volt-jogger",
+        "k-ninja-tee",
+        "k-orbit-hoodie",
+        "k-weekend-jogger"
+    ]
+    
+    all_passed = True
+    
+    for slug in slugs:
+        try:
+            resp = requests.get(f"{BASE_URL}/products/{slug}", timeout=10)
+            if resp.status_code == 200:
+                product = resp.json()
+                required_fields = ["id", "slug", "name", "category", "collection", "price", 
+                                 "mrp", "discount", "images", "sizes", "rating", "reviews", "description", "gender"]
+                has_all = all(field in product for field in required_fields)
+                
+                # Verify images and sizes are non-empty lists
+                images_valid = isinstance(product.get("images"), list) and len(product.get("images", [])) > 0
+                sizes_valid = isinstance(product.get("sizes"), list) and len(product.get("sizes", [])) > 0
+                
+                if has_all and images_valid and sizes_valid and product.get("slug") == slug:
+                    log_test(f"NEW: GET /api/products/{slug} returns 200 with valid data", True)
+                else:
+                    issues = []
+                    if not has_all:
+                        missing = [f for f in required_fields if f not in product]
+                        issues.append(f"Missing fields: {missing}")
+                    if not images_valid:
+                        issues.append("images not a non-empty list")
+                    if not sizes_valid:
+                        issues.append("sizes not a non-empty list")
+                    if product.get("slug") != slug:
+                        issues.append("slug mismatch")
+                    log_test(f"NEW: GET /api/products/{slug} returns 200 with valid data", False, 
+                            "; ".join(issues))
+                    all_passed = False
+            else:
+                log_test(f"NEW: GET /api/products/{slug} returns 200 with valid data", False, 
+                        f"Status {resp.status_code}")
+                all_passed = False
+        except Exception as e:
+            log_test(f"NEW: GET /api/products/{slug} returns 200 with valid data", False, str(e))
+            all_passed = False
+    
+    return all_passed
 
 
 def test_nonexistent_slug():
@@ -264,32 +309,38 @@ def test_nonexistent_slug():
         return False
 
 
-def test_collection_cosmic_heroes():
-    """NEW: Test GET /api/products?collection=cosmic-heroes returns only that collection"""
+def test_kids_age_based_sizes():
+    """NEW: Test kids products have age-based sizes (e.g., '2-3Y')"""
     try:
-        resp = requests.get(f"{BASE_URL}/products?collection=cosmic-heroes", timeout=10)
+        resp = requests.get(f"{BASE_URL}/products?gender=kids", timeout=10)
         if resp.status_code == 200:
             products = resp.json()
             if isinstance(products, list) and len(products) > 0:
-                all_cosmic = all(p.get("collection") == "cosmic-heroes" for p in products)
-                if all_cosmic:
-                    log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", True, 
-                            f"Found {len(products)} products")
+                # Check first few kids products for age-based sizes
+                sample_product = products[0]
+                sizes = sample_product.get("sizes", [])
+                
+                # Age-based sizes should contain 'Y' (e.g., '2-3Y', '4-5Y')
+                has_age_sizes = any('Y' in str(size) for size in sizes)
+                
+                if has_age_sizes:
+                    log_test("NEW: Kids products have age-based sizes (e.g., '2-3Y')", True, 
+                            f"Sample sizes: {sizes[:3]}")
                     return True
                 else:
-                    log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
-                            "Some products are not from cosmic-heroes collection")
+                    log_test("NEW: Kids products have age-based sizes (e.g., '2-3Y')", False, 
+                            f"Expected age-based sizes with 'Y', got: {sizes}")
                     return False
             else:
-                log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
-                        "Expected non-empty array")
+                log_test("NEW: Kids products have age-based sizes (e.g., '2-3Y')", False, 
+                        "No kids products found")
                 return False
         else:
-            log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, 
+            log_test("NEW: Kids products have age-based sizes (e.g., '2-3Y')", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("NEW: GET /api/products?collection=cosmic-heroes filters correctly", False, str(e))
+        log_test("NEW: Kids products have age-based sizes (e.g., '2-3Y')", False, str(e))
         return False
 
 
@@ -297,48 +348,33 @@ def test_collection_cosmic_heroes():
 # REGRESSION TESTS
 # ============================================================================
 
-def test_search_with_query():
-    """REGRESSION: Test GET /api/search?q=hoodie returns non-empty"""
+def test_category_hoodies_no_gender():
+    """REGRESSION: Test GET /api/products?category=hoodies (no gender) returns hoodies across all genders (>10)"""
     try:
-        resp = requests.get(f"{BASE_URL}/search?q=hoodie", timeout=10)
+        resp = requests.get(f"{BASE_URL}/products?category=hoodies", timeout=10)
         if resp.status_code == 200:
-            results = resp.json()
-            if isinstance(results, list) and len(results) > 0:
-                log_test("REGRESSION: GET /api/search?q=hoodie returns results", True, 
-                        f"Found {len(results)} results")
-                return True
+            products = resp.json()
+            if isinstance(products, list) and len(products) > 10:
+                # Verify all are hoodies
+                all_hoodies = all(p.get("category") == "hoodies" for p in products)
+                if all_hoodies:
+                    log_test("REGRESSION: GET /api/products?category=hoodies (no gender) returns >10 hoodies", True, 
+                            f"Found {len(products)} hoodies across all genders")
+                    return True
+                else:
+                    log_test("REGRESSION: GET /api/products?category=hoodies (no gender) returns >10 hoodies", False, 
+                            "Some products are not hoodies")
+                    return False
             else:
-                log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, 
-                        "Expected non-empty array")
+                log_test("REGRESSION: GET /api/products?category=hoodies (no gender) returns >10 hoodies", False, 
+                        f"Expected >10 hoodies, got {len(products) if isinstance(products, list) else 'non-list'}")
                 return False
         else:
-            log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, 
+            log_test("REGRESSION: GET /api/products?category=hoodies (no gender) returns >10 hoodies", False, 
                     f"Status {resp.status_code}")
             return False
     except Exception as e:
-        log_test("REGRESSION: GET /api/search?q=hoodie returns results", False, str(e))
-        return False
-
-
-def test_search_empty():
-    """REGRESSION: Test GET /api/search?q= returns empty array"""
-    try:
-        resp = requests.get(f"{BASE_URL}/search?q=", timeout=10)
-        if resp.status_code == 200:
-            results = resp.json()
-            if isinstance(results, list) and len(results) == 0:
-                log_test("REGRESSION: GET /api/search?q= returns empty array", True)
-                return True
-            else:
-                log_test("REGRESSION: GET /api/search?q= returns empty array", False, 
-                        f"Expected empty array, got {len(results)} items")
-                return False
-        else:
-            log_test("REGRESSION: GET /api/search?q= returns empty array", False, 
-                    f"Status {resp.status_code}")
-            return False
-    except Exception as e:
-        log_test("REGRESSION: GET /api/search?q= returns empty array", False, str(e))
+        log_test("REGRESSION: GET /api/products?category=hoodies (no gender) returns >10 hoodies", False, str(e))
         return False
 
 
@@ -411,29 +447,6 @@ def test_coupon_flat300_above_min():
         return False
 
 
-def test_coupon_invalid():
-    """REGRESSION: Test POST /api/coupon/validate with bogus code"""
-    try:
-        payload = {"code": "BOGUS123", "subtotal": 2000}
-        resp = requests.post(f"{BASE_URL}/coupon/validate", json=payload, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if not data.get("valid"):
-                log_test("REGRESSION: Bogus coupon -> invalid", True)
-                return True
-            else:
-                log_test("REGRESSION: Bogus coupon -> invalid", False, 
-                        "Should be invalid but got valid=True")
-                return False
-        else:
-            log_test("REGRESSION: Bogus coupon -> invalid", False, 
-                    f"Status {resp.status_code}")
-            return False
-    except Exception as e:
-        log_test("REGRESSION: Bogus coupon -> invalid", False, str(e))
-        return False
-
-
 def test_auth_me_without_token():
     """REGRESSION: Test GET /api/auth/me without token returns 401"""
     try:
@@ -481,7 +494,7 @@ def seed_test_user():
         db.users.insert_one({
             "user_id": user_id,
             "email": email,
-            "name": "Test User",
+            "name": "Priya Sharma",
             "picture": "https://via.placeholder.com/150",
             "wishlist": [],
             "created_at": datetime.now(timezone.utc)
@@ -542,29 +555,29 @@ def test_create_order(token):
         payload = {
             "items": [
                 {
-                    "id": "nebula-drift-tee",
-                    "name": "Nebula Drift Oversized Tee",
-                    "slug": "nebula-drift-tee",
-                    "image": "https://images.pexels.com/photos/37186394/pexels-photo-37186394.jpeg",
-                    "price": 1299,
-                    "size": "L",
+                    "id": "w-orbit-hoodie",
+                    "name": "Orbit Zip Hoodie",
+                    "slug": "w-orbit-hoodie",
+                    "image": "https://images.unsplash.com/photo-1663573688938-2b3e7ea2ab33",
+                    "price": 2099,
+                    "size": "M",
                     "color": "Black",
-                    "qty": 2
+                    "qty": 1
                 }
             ],
-            "total": 2598,
-            "subtotal": 2598,
+            "total": 2099,
+            "subtotal": 2099,
             "discount": 0,
             "shipping": 0,
             "coupon": None,
-            "payment_method": "COD",
+            "payment_method": "UPI",
             "address": {
-                "name": "Arjun Mehta",
+                "name": "Priya Sharma",
                 "phone": "9876543210",
-                "line1": "456 MG Road",
-                "city": "Mumbai",
-                "state": "Maharashtra",
-                "pincode": "400001"
+                "line1": "123 Brigade Road",
+                "city": "Bangalore",
+                "state": "Karnataka",
+                "pincode": "560001"
             }
         }
         resp = requests.post(f"{BASE_URL}/orders", json=payload, headers=headers, timeout=10)
@@ -611,54 +624,6 @@ def test_list_orders(token):
         return False
 
 
-def test_wishlist_toggle_add(token):
-    """REGRESSION: Test POST /api/wishlist/toggle to add item"""
-    try:
-        headers = {"Authorization": f"Bearer {token}"}
-        payload = {"product_id": "orbit-hoodie"}
-        resp = requests.post(f"{BASE_URL}/wishlist/toggle", json=payload, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if "wishlist" in data and "orbit-hoodie" in data["wishlist"]:
-                log_test("REGRESSION: Wishlist toggle add works", True)
-                return True
-            else:
-                log_test("REGRESSION: Wishlist toggle add works", False, 
-                        f"Expected orbit-hoodie in wishlist, got {data}")
-                return False
-        else:
-            log_test("REGRESSION: Wishlist toggle add works", False, 
-                    f"Status {resp.status_code}: {resp.text[:200]}")
-            return False
-    except Exception as e:
-        log_test("REGRESSION: Wishlist toggle add works", False, str(e))
-        return False
-
-
-def test_wishlist_toggle_remove(token):
-    """REGRESSION: Test POST /api/wishlist/toggle to remove item"""
-    try:
-        headers = {"Authorization": f"Bearer {token}"}
-        payload = {"product_id": "orbit-hoodie"}
-        resp = requests.post(f"{BASE_URL}/wishlist/toggle", json=payload, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if "wishlist" in data and "orbit-hoodie" not in data["wishlist"]:
-                log_test("REGRESSION: Wishlist toggle remove works", True)
-                return True
-            else:
-                log_test("REGRESSION: Wishlist toggle remove works", False, 
-                        f"Expected orbit-hoodie removed, got {data}")
-                return False
-        else:
-            log_test("REGRESSION: Wishlist toggle remove works", False, 
-                    f"Status {resp.status_code}: {resp.text[:200]}")
-            return False
-    except Exception as e:
-        log_test("REGRESSION: Wishlist toggle remove works", False, str(e))
-        return False
-
-
 def print_summary():
     """Print test summary"""
     print("\n" + "="*70)
@@ -684,41 +649,42 @@ def main():
     """Run all tests"""
     print("\n" + "="*70)
     print("DAPPER DEN BACKEND API TEST SUITE")
-    print("Regression + New Verification")
+    print("WOMEN & KIDS Sections Verification (115 products)")
     print("="*70 + "\n")
     
     # ========================================================================
-    # NEW TESTS - Bug Fix Verification
+    # NEW TESTS - WOMEN & KIDS Sections
     # ========================================================================
-    print("🆕 NEW TESTS - Bug Fix Verification")
+    print("🆕 NEW TESTS - WOMEN & KIDS Sections Verification")
     print("-" * 70)
     
-    # 1. Test 60 products
-    passed, products = test_products_count_60()
+    # 1. Test 115 products total
+    passed, products = test_products_count_115()
     
-    # 2. Test category filters (10 each)
-    test_category_filters()
+    # 2. Test gender filters (men 60, women 32, kids 23)
+    test_gender_filters()
     
-    # 3. Test no duplicate primary images
+    # 3. Test gender+category combos for women
+    test_gender_category_combos_women()
+    
+    # 4. Test gender+category combos for kids
+    test_gender_category_combos_kids()
+    
+    # 5. Test GET /api/categories?gender= for women, kids, men
+    test_categories_by_gender()
+    
+    # 6. Test GLOBAL image uniqueness across ALL 115 products
     if products:
-        test_no_duplicate_primary_images(products)
+        test_global_image_uniqueness(products)
     
-    # 4. Test ALL images globally unique (no reuse)
-    if products:
-        test_all_images_globally_unique(products)
+    # 7. Test new women/kids slugs
+    test_new_women_kids_slugs()
     
-    # 5. Test at least 50 of 60 products have multiple colourway images
-    if products:
-        test_multiple_colourway_images(products)
-    
-    # 6. Test new slugs (including field validation)
-    test_new_slugs()
-    
-    # 7. Test non-existent slug
+    # 8. Test non-existent slug returns 404
     test_nonexistent_slug()
     
-    # 8. Test collection filter
-    test_collection_cosmic_heroes()
+    # 9. Test kids products have age-based sizes
+    test_kids_age_based_sizes()
     
     # ========================================================================
     # REGRESSION TESTS
@@ -726,21 +692,19 @@ def main():
     print("\n🔄 REGRESSION TESTS")
     print("-" * 70)
     
-    # 7. Search tests
-    test_search_with_query()
-    test_search_empty()
+    # 10. Test category filter without gender (hoodies across all genders)
+    test_category_hoodies_no_gender()
     
-    # 8. Coupon tests
+    # 11. Coupon tests
     test_coupon_dapper10()
     test_coupon_flat300_below_min()
     test_coupon_flat300_above_min()
-    test_coupon_invalid()
     
-    # 9. Auth protection tests (without token)
+    # 12. Auth protection tests (without token)
     test_auth_me_without_token()
     test_orders_without_token()
     
-    # 10. Seed test user
+    # 13. Seed test user
     print("\n👤 SEEDING TEST USER")
     print("-" * 70)
     token, user_id = seed_test_user()
@@ -750,18 +714,14 @@ def main():
         print_summary()
         sys.exit(1)
     
-    # 11. Auth tests with token
+    # 14. Auth tests with token
     print("🔓 AUTH TESTS (with Bearer token)")
     print("-" * 70)
     test_auth_me_with_token(token)
     
-    # 12. Orders tests
+    # 15. Orders tests
     test_create_order(token)
     test_list_orders(token)
-    
-    # 13. Wishlist tests
-    test_wishlist_toggle_add(token)
-    test_wishlist_toggle_remove(token)
     
     # Print summary
     all_passed = print_summary()

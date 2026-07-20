@@ -216,24 +216,36 @@ export default function PDP() {
                 <h3 className="font-display text-2xl text-white">SIZE GUIDE</h3>
                 <button onClick={() => setSizeGuide(false)}><X className="text-white" /></button>
               </div>
-              <p className="mt-1 text-sm text-[#8b8b93]">Measurements in inches (chest / length)</p>
-              <table className="mt-4 w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#2a2a30] text-left text-[#8b8b93]">
-                    <th className="py-2">Size</th><th>Chest</th><th>Length</th>
-                  </tr>
-                </thead>
-                <tbody className="text-white">
-                  {[["XS","36","26"],["S","38","27"],["M","40","28"],["L","42","29"],["XL","44","30"],["XXL","46","31"]].map((r) => (
-                    <tr key={r[0]} className="border-b border-[#2a2a30]/60">
-                      <td className="py-2 font-semibold">{r[0]}</td><td>{r[1]}"</td><td>{r[2]}"</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="mt-4 flex items-start gap-2 rounded-lg bg-lime/10 p-3 text-sm text-lime">
-                <Check size={16} className="mt-0.5 shrink-0" /> Prefer oversized? Size up by one for the boxy streetwear fit.
-              </div>
+              {(() => {
+                const CHARTS = {
+                  men: { cols: ["Size", "Chest", "Length"], unit: "inches (chest / length)", rows: [["XS","36","26"],["S","38","27"],["M","40","28"],["L","42","29"],["XL","44","30"],["XXL","46","31"]], tip: "Prefer oversized? Size up by one for the boxy streetwear fit." },
+                  women: { cols: ["Size", "Bust", "Waist"], unit: "inches (bust / waist)", rows: [["XS","32","25"],["S","34","27"],["M","36","29"],["L","38","31"],["XL","40","33"],["XXL","42","35"]], tip: "Between sizes? Size up for a relaxed fit, down for a fitted look." },
+                  kids: { cols: ["Age", "Height (cm)", "Chest"], unit: "age vs height/chest", rows: [["2-3Y","92-98","21\""],["4-5Y","104-110","23\""],["6-7Y","116-122","25\""],["8-9Y","128-134","27\""],["10-11Y","140-146","29\""],["12-13Y","152-158","31\""]], tip: "Kids grow fast — size up if they're between ages." },
+                };
+                const chart = CHARTS[product.gender] || CHARTS.men;
+                return (
+                  <>
+                    <p className="mt-1 text-sm text-[#8b8b93]">Measurements — {chart.unit}</p>
+                    <table className="mt-4 w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-[#2a2a30] text-left text-[#8b8b93]">
+                          {chart.cols.map((c) => (<th key={c} className="py-2">{c}</th>))}
+                        </tr>
+                      </thead>
+                      <tbody className="text-white">
+                        {chart.rows.map((r) => (
+                          <tr key={r[0]} className="border-b border-[#2a2a30]/60">
+                            {r.map((cell, ci) => (<td key={ci} className={ci === 0 ? "py-2 font-semibold" : ""}>{cell}</td>))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="mt-4 flex items-start gap-2 rounded-lg bg-lime/10 p-3 text-sm text-lime">
+                      <Check size={16} className="mt-0.5 shrink-0" /> {chart.tip}
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </>
         )}

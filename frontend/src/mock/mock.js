@@ -48,6 +48,23 @@ export const CATEGORIES = [
   { id: "accessories", name: "Accessories", slug: "accessories", image: "https://images.unsplash.com/photo-1533603531139-2c4d04df8f16?w=800&q=80" },
 ];
 
+export const CATEGORIES_WOMEN = [
+  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: "https://images.unsplash.com/photo-1661110546797-d86cc72a2765?w=800&q=80" },
+  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: "https://images.unsplash.com/photo-1663573688938-2b3e7ea2ab33?w=800&q=80" },
+  { id: "joggers", name: "Joggers", slug: "joggers", image: "https://images.unsplash.com/photo-1480179087180-d9f0ec044897?w=800&q=80" },
+  { id: "dresses", name: "Dresses & Co-ords", slug: "dresses", image: "https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=800&q=80" },
+];
+
+export const CATEGORIES_KIDS = [
+  { id: "t-shirts", name: "T-Shirts", slug: "t-shirts", image: "https://images.unsplash.com/photo-1611428813653-aa606c998586?w=800&q=80" },
+  { id: "hoodies", name: "Hoodies", slug: "hoodies", image: "https://images.pexels.com/photos/15395266/pexels-photo-15395266.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "joggers", name: "Joggers", slug: "joggers", image: "https://images.unsplash.com/photo-1659779193831-97ccb9fecfeb?w=800&q=80" },
+];
+
+export const CATEGORIES_BY_GENDER = { men: CATEGORIES, women: CATEGORIES_WOMEN, kids: CATEGORIES_KIDS };
+
+export const GENDER_LABELS = { men: "Men", women: "Women", kids: "Kids" };
+
 export const COLLECTIONS = [
   {
     id: "cosmic-heroes",

@@ -26,8 +26,10 @@ export function DataProvider({ children }) {
   }, []);
 
   const getProduct = (slug) => products.find((p) => p.slug === slug);
-  const getProductsByCategory = (cat) => products.filter((p) => p.category === cat);
+  const getProductsByCategory = (cat, gender = "men") =>
+    products.filter((p) => p.category === cat && (p.gender || "men") === gender);
   const getProductsByCollection = (col) => products.filter((p) => p.collection === col);
+  const byGender = (gender = "men") => products.filter((p) => (p.gender || "men") === gender);
   const searchProducts = (q) => {
     const s = (q || "").toLowerCase().trim();
     if (!s) return [];
@@ -35,13 +37,14 @@ export function DataProvider({ children }) {
       (p) =>
         p.name.toLowerCase().includes(s) ||
         p.category.toLowerCase().includes(s) ||
+        (p.gender || "").toLowerCase().includes(s) ||
         p.collection.replace("-", " ").toLowerCase().includes(s)
     );
   };
 
   return (
     <DataContext.Provider
-      value={{ products, loading, getProduct, getProductsByCategory, getProductsByCollection, searchProducts }}
+      value={{ products, loading, getProduct, getProductsByCategory, getProductsByCollection, byGender, searchProducts }}
     >
       {children}
     </DataContext.Provider>

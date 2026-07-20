@@ -76,9 +76,9 @@ _DESC = ("Premium heavyweight build with a relaxed streetwear fit. Durable print
          "everyday flex. Available in multiple colourways.")
 
 
-def _mk(pid, name, category, collection, price, mrp, imgs, badge, rating, reviews, sizes):
+def _mk(pid, name, category, collection, price, mrp, imgs, badge, rating, reviews, sizes, gender="men"):
     return {
-        "id": pid, "slug": pid, "name": name, "category": category,
+        "id": pid, "slug": pid, "name": name, "category": category, "gender": gender,
         "collection": collection, "price": price, "mrp": mrp,
         "discount": round((mrp - price) / mrp * 100),
         "images": imgs, "sizes": sizes,
@@ -86,7 +86,7 @@ def _mk(pid, name, category, collection, price, mrp, imgs, badge, rating, review
     }
 
 
-def _build(cat, specs, pool, sizes=None):
+def _build(cat, specs, pool, sizes=None, gender="men"):
     """Assign consecutive, non-overlapping image slices so each product gets 1-2
     unique colourway images (no repetition anywhere)."""
     sizes = sizes or _SIZES
@@ -97,7 +97,7 @@ def _build(cat, specs, pool, sizes=None):
         k = max(1, base + (1 if i < extra else 0))
         imgs = pool[idx:idx + k]
         idx += k
-        out.append(_mk(slug, name, cat, coll, price, mrp, imgs, badge, rating, rev, sizes))
+        out.append(_mk(slug, name, cat, coll, price, mrp, imgs, badge, rating, rev, sizes, gender))
     return out
 
 
@@ -181,6 +181,112 @@ PRODUCTS = (
         _mk("squad-backpack", "Squad Daypack", "accessories", "squad-goals", 1499, 2199, [PX(701742)], None, 4.4, 120, _OS),
     ]
 )
+
+_KID_SIZES = ["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-11Y", "12-13Y"]
+
+# ---------- WOMEN pools (globally unique, type-accurate) ----------
+W_TEE = [UN("1661110546797-d86cc72a2765"), UN("1616006897093-5e4635c0de35"), UN("1622445275992-e7efb32d2257"), PX(37011552), UN("1583744999783-efe9dc5eac91"), UN("1551799517-eb8f03cb5e6a"), UN("1620799139507-2a76f79a2f4d"), PX(7319146)]
+W_HOOD = [UN("1663573688938-2b3e7ea2ab33"), UN("1633292750937-120a94f5c2bb"), UN("1633292587737-f898a032e562"), PX(18556218), UN("1618333845076-890b5baf8ffe"), UN("1677466923317-fe39ab5de57b"), UN("1521567097888-2c5fc40a8660"), UN("1614270532514-904c3aa5628e")]
+W_JOG = [UN("1480179087180-d9f0ec044897"), UN("1569032915512-922c2e506c51"), UN("1588117260148-b47818741c74"), UN("1588117305388-c2631a279f82"), UN("1515886657613-9f3515b0c78f"), UN("1590330297626-d7aff25a0431"), PX(6630811), PX(9901666)]
+W_DRESS = [UN("1617922001439-4a2e6562f328"), UN("1496217590455-aa63a8350eea"), UN("1762154057377-cc9d3dd6900c"), PX(6675408), PX(29017408), UN("1780541249007-dc673c8980a5"), UN("1779400203195-8906eec4b645"), UN("1765560219977-33ee2f1dfcc9"), PX(1007011), PX(15142059), PX(34967316), PX(34891485), UN("1765615913141-5f0c1eadfd81"), UN("1763971922545-c0ffa1c09cc0"), UN("1763971922538-5802acdd48b8"), PX(31566599)]
+
+# ---------- KIDS pools ----------
+K_TEE = [UN("1611428813653-aa606c998586"), UN("1627859774205-83c1279a6382"), UN("1620905385976-9f191e837efd"), PX(32071161), UN("1657779532102-faa144145bb5"), UN("1627639679638-8485316a4b21"), PX(26837734), PX(8632212)]
+K_HOOD = [PX(15395266), PX(14980503), UN("1664255566089-95bd5c6af061"), UN("1678354787621-c16724e8bc5d"), UN("1586038693164-cb7ee3fb8e2c"), PX(38394262), PX(29214428), PX(37451174)]
+K_JOG = [UN("1659779193831-97ccb9fecfeb"), UN("1607454317506-a7c47bb424bc"), PX(5896761), PX(14571357), UN("1616692994673-2feb09ac5770"), PX(31637467), PX(36073200)]
+
+_W_TEES = [
+    ("w-nova-tee", "Nova Femme Tee", "cosmic-heroes", 899, 1399, "New", 4.6, 210),
+    ("w-sakura-tee", "Sakura Ink Tee", "anime-legends", 949, 1499, "Trending", 4.7, 340),
+    ("w-noir-tee", "Noir Crest Tee", "shadow-vigilante", 899, 1399, None, 4.5, 180),
+    ("w-crew-tee", "Crew Anthem Tee", "squad-goals", 799, 1299, "Value", 4.4, 260),
+    ("w-glow-tee", "Glow Grid Tee", "neon-dreams", 949, 1499, "New", 4.6, 190),
+    ("w-hex-tee", "Hex Rune Tee", "wizard-world", 899, 1399, None, 4.5, 150),
+    ("w-comet-tee", "Comet Trail Tee", "cosmic-heroes", 899, 1399, "Bestseller", 4.7, 300),
+    ("w-ronin-tee", "Ronin Femme Tee", "anime-legends", 949, 1499, None, 4.5, 170),
+]
+_W_HOODS = [
+    ("w-orbit-hoodie", "Orbit Zip Hoodie", "cosmic-heroes", 2099, 2999, "Bestseller", 4.8, 420),
+    ("w-kaiju-hoodie", "Kaiju Storm Hoodie", "anime-legends", 2199, 3099, "Trending", 4.7, 380),
+    ("w-umbra-hoodie", "Umbra Pullover Hoodie", "shadow-vigilante", 1999, 2899, None, 4.5, 210),
+    ("w-potion-hoodie", "Potion Master Hoodie", "wizard-world", 2099, 2999, None, 4.6, 190),
+    ("w-laser-hoodie", "Laser Line Hoodie", "neon-dreams", 2299, 3199, "New", 4.7, 240),
+    ("w-nova-hoodie", "Nova Core Hoodie", "cosmic-heroes", 2099, 2999, None, 4.5, 160),
+    ("w-squad-hoodie", "Squad Comfort Hoodie", "squad-goals", 1899, 2699, "Value", 4.4, 300),
+    ("w-shogun-hoodie", "Shogun Zip Hoodie", "anime-legends", 2199, 3099, "Bestseller", 4.7, 280),
+]
+_W_JOGS = [
+    ("w-void-jogger", "Void Cargo Joggers", "cosmic-heroes", 1599, 2299, None, 4.5, 180),
+    ("w-blackout-jogger", "Blackout Tapered Joggers", "shadow-vigilante", 1699, 2399, None, 4.5, 200),
+    ("w-weekend-jogger", "Weekend Comfort Joggers", "squad-goals", 1399, 1999, "Bestseller", 4.6, 320),
+    ("w-volt-jogger", "Volt Reflective Joggers", "neon-dreams", 1799, 2499, "Trending", 4.6, 260),
+    ("w-astro-legging", "Astro Flex Leggings", "cosmic-heroes", 1499, 2199, None, 4.5, 210),
+    ("w-rune-jogger", "Rune Fleece Joggers", "wizard-world", 1499, 2099, None, 4.4, 150),
+    ("w-grid-legging", "Grid Glow Leggings", "neon-dreams", 1699, 2399, "New", 4.5, 190),
+    ("w-squad-jogger", "Squad Everyday Joggers", "squad-goals", 1399, 1999, "Value", 4.3, 240),
+]
+_W_DRESSES = [
+    ("w-nebula-dress", "Nebula Slip Dress", "cosmic-heroes", 1799, 2599, "Bestseller", 4.7, 340),
+    ("w-sakura-dress", "Sakura Bloom Dress", "anime-legends", 1899, 2699, "Trending", 4.8, 410),
+    ("w-noir-slip", "Noir Midi Dress", "shadow-vigilante", 1699, 2499, None, 4.5, 180),
+    ("w-aura-coord", "Aura Co-ord Set", "squad-goals", 2199, 2999, "New", 4.6, 220),
+    ("w-glow-coord", "Glow Two-Piece Set", "neon-dreams", 2299, 3199, "Trending", 4.7, 260),
+    ("w-mystic-dress", "Mystic Wrap Dress", "wizard-world", 1799, 2599, None, 4.5, 160),
+    ("w-comet-dress", "Comet Bodycon Dress", "cosmic-heroes", 1699, 2399, None, 4.5, 190),
+    ("w-ronin-coord", "Ronin Co-ord Set", "anime-legends", 2099, 2899, "Bestseller", 4.7, 300),
+]
+_K_TEES = [
+    ("k-hero-tee", "Little Hero Tee", "cosmic-heroes", 599, 899, "New", 4.6, 120),
+    ("k-ninja-tee", "Mini Ninja Tee", "anime-legends", 649, 949, "Trending", 4.7, 160),
+    ("k-shadow-tee", "Shadow Squad Tee", "shadow-vigilante", 599, 899, None, 4.5, 90),
+    ("k-buddy-tee", "Buddy Club Tee", "squad-goals", 549, 799, "Value", 4.4, 140),
+    ("k-glow-tee", "Glow Bolt Tee", "neon-dreams", 649, 949, "New", 4.5, 100),
+    ("k-wizard-tee", "Junior Wizard Tee", "wizard-world", 599, 899, None, 4.5, 80),
+    ("k-comet-tee", "Comet Kid Tee", "cosmic-heroes", 599, 899, "Bestseller", 4.7, 130),
+    ("k-dragon-tee", "Dragon Cub Tee", "anime-legends", 649, 949, None, 4.5, 95),
+]
+_K_HOODS = [
+    ("k-orbit-hoodie", "Orbit Kid Hoodie", "cosmic-heroes", 1299, 1899, "Bestseller", 4.8, 210),
+    ("k-kaiju-hoodie", "Kaiju Cub Hoodie", "anime-legends", 1349, 1999, "Trending", 4.7, 180),
+    ("k-umbra-hoodie", "Umbra Kid Hoodie", "shadow-vigilante", 1199, 1799, None, 4.5, 110),
+    ("k-potion-hoodie", "Potion Kid Hoodie", "wizard-world", 1299, 1899, None, 4.6, 95),
+    ("k-laser-hoodie", "Laser Kid Hoodie", "neon-dreams", 1399, 1999, "New", 4.7, 130),
+    ("k-nova-hoodie", "Nova Kid Hoodie", "cosmic-heroes", 1299, 1899, None, 4.5, 85),
+    ("k-squad-hoodie", "Squad Kid Hoodie", "squad-goals", 1149, 1699, "Value", 4.4, 150),
+    ("k-shogun-hoodie", "Shogun Kid Hoodie", "anime-legends", 1349, 1999, "Bestseller", 4.7, 140),
+]
+_K_JOGS = [
+    ("k-void-jogger", "Void Kid Joggers", "cosmic-heroes", 899, 1399, None, 4.5, 90),
+    ("k-blackout-jogger", "Blackout Kid Joggers", "shadow-vigilante", 949, 1449, None, 4.5, 100),
+    ("k-weekend-jogger", "Weekend Kid Joggers", "squad-goals", 849, 1299, "Bestseller", 4.6, 160),
+    ("k-volt-jogger", "Volt Kid Joggers", "neon-dreams", 999, 1499, "Trending", 4.6, 120),
+    ("k-astro-jogger", "Astro Kid Joggers", "cosmic-heroes", 899, 1399, None, 4.5, 95),
+    ("k-rune-jogger", "Rune Kid Joggers", "wizard-world", 849, 1299, None, 4.4, 70),
+    ("k-grid-jogger", "Grid Kid Joggers", "neon-dreams", 949, 1449, "New", 4.5, 85),
+]
+
+PRODUCTS = PRODUCTS + (
+    _build("t-shirts", _W_TEES, W_TEE, gender="women")
+    + _build("hoodies", _W_HOODS, W_HOOD, gender="women")
+    + _build("joggers", _W_JOGS, W_JOG, gender="women")
+    + _build("dresses", _W_DRESSES, W_DRESS, gender="women")
+    + _build("t-shirts", _K_TEES, K_TEE, _KID_SIZES, gender="kids")
+    + _build("hoodies", _K_HOODS, K_HOOD, _KID_SIZES, gender="kids")
+    + _build("joggers", _K_JOGS, K_JOG, _KID_SIZES, gender="kids")
+)
+
+CATEGORIES_WOMEN = [
+    {"id": "t-shirts", "name": "T-Shirts", "slug": "t-shirts", "image": W_TEE[0]},
+    {"id": "hoodies", "name": "Hoodies", "slug": "hoodies", "image": W_HOOD[0]},
+    {"id": "joggers", "name": "Joggers", "slug": "joggers", "image": W_JOG[0]},
+    {"id": "dresses", "name": "Dresses & Co-ords", "slug": "dresses", "image": W_DRESS[0]},
+]
+CATEGORIES_KIDS = [
+    {"id": "t-shirts", "name": "T-Shirts", "slug": "t-shirts", "image": K_TEE[0]},
+    {"id": "hoodies", "name": "Hoodies", "slug": "hoodies", "image": K_HOOD[0]},
+    {"id": "joggers", "name": "Joggers", "slug": "joggers", "image": K_JOG[0]},
+]
+CATEGORIES_BY_GENDER = {"men": CATEGORIES, "women": CATEGORIES_WOMEN, "kids": CATEGORIES_KIDS}
 
 COUPONS = {
     "DAPPER10": {"type": "percent", "value": 10, "label": "10% off"},
