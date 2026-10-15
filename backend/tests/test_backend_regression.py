@@ -1,12 +1,14 @@
 """
-Backend regression tests for Dapper Den (guest-only).
-Focus: verify pymongo==4.6.3 / motor==3.3.1 pin fix — MongoDB read/write via orders.
+Live regression tests for a running Dapper Den backend (real MongoDB).
+Not run by default — point BACKEND_URL at a deployment and run:
+    BACKEND_URL=https://your-api.onrender.com pytest tests/test_backend_regression.py -o addopts=""
+Note: this creates a real test order in the target database.
 """
 import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://dapper-design-build.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('BACKEND_URL', 'http://localhost:8001').rstrip('/')
 API = f"{BASE_URL}/api"
 
 
@@ -101,16 +103,9 @@ def test_coupon_invalid_code(s):
 # ---------- Orders (Mongo write + read) ----------
 @pytest.fixture(scope="module")
 def created_order(s):
+    product = s.get(f"{API}/products").json()[0]
     payload = {
-        "items": [{
-            "id": "p1", "name": "TEST_Tee", "slug": "test-tee",
-            "image": "https://example.com/i.jpg",
-            "price": 1299, "size": "M", "color": "Black", "qty": 2
-        }],
-        "subtotal": 2598,
-        "discount": 0,
-        "shipping": 0,
-        "total": 2598,
+        "items": [{"id": product["id"], "size": product["sizes"][0], "color": "Colour 1", "qty": 2}],
         "coupon": None,
         "payment_method": "COD",
         "address": {
@@ -124,7 +119,7 @@ def created_order(s):
     data = r.json()
     assert data.get("order_id", "").startswith("DD")
     assert data["status"] == "Confirmed"
-    assert data["total"] == 2598
+    assert data["subtotal"] == product["price"] * 2
     assert "_id" not in data  # Mongo _id must not leak
     return data
 

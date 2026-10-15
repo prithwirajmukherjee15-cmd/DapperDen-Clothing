@@ -40,7 +40,7 @@ export default function TrackOrder() {
       <form onSubmit={track} className="mt-8 grid gap-4 rounded-2xl border border-[#2a2a30] bg-[#131316] p-6 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block font-grotesk text-sm text-[#c9c9cf]">Order ID</label>
-          <input value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="DD123456" data-testid="track-order-id"
+          <input value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="DD1234567890" data-testid="track-order-id"
             className="w-full rounded-lg border border-[#2a2a30] bg-[#0f0f12] px-3 py-2.5 text-sm text-white outline-none transition focus:border-lime" />
         </div>
         <div>

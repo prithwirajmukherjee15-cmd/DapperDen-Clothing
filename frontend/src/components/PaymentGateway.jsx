@@ -68,7 +68,9 @@ const CardBrandIcon = ({ brand }) => {
   return map[brand] || <CreditCard size={18} className="text-slate-400" />;
 };
 
-export default function PaymentGateway({ amount, onSuccess, onBack }) {
+// onSuccess(label) places the order and must reject if it fails; onComplete runs
+// after the success animation.
+export default function PaymentGateway({ amount, onSuccess, onComplete, onBack }) {
   const [method, setMethod] = useState("upi");
   const [processing, setProcessing] = useState(null); // {label, phase}
   const [err, setErr] = useState("");
@@ -85,11 +87,20 @@ export default function PaymentGateway({ amount, onSuccess, onBack }) {
 
   const cardBrand = useMemo(() => detectCard(card.number), [card.number]);
 
-  const runPayment = (label) => {
+  const runPayment = async (label) => {
     setErr("");
     setProcessing({ label, phase: "processing" });
-    setTimeout(() => setProcessing({ label, phase: "success" }), 2200);
-    setTimeout(() => onSuccess(label), 3300);
+    const minDelay = new Promise((r) => setTimeout(r, 2200));
+    try {
+      await Promise.all([onSuccess(label), minDelay]);
+    } catch (e) {
+      await minDelay;
+      setProcessing(null);
+      setErr(e?.message || "We couldn't place your order. Please try again.");
+      return;
+    }
+    setProcessing({ label, phase: "success" });
+    setTimeout(() => onComplete?.(), 1100);
   };
 
   const payCard = () => {

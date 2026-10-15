@@ -38,7 +38,7 @@ export function DataProvider({ children }) {
         p.name.toLowerCase().includes(s) ||
         p.category.toLowerCase().includes(s) ||
         (p.gender || "").toLowerCase().includes(s) ||
-        p.collection.replace("-", " ").toLowerCase().includes(s)
+        p.collection.replace(/-/g, " ").toLowerCase().includes(s)
     );
   };
 

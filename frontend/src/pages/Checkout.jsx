@@ -17,33 +17,35 @@ export default function Checkout() {
   const [addr, setAddr] = useState({ name: "", phone: "", email: "", pincode: "", line: "", city: "", stateName: "" });
   const [payLabel, setPayLabel] = useState("");
   const [paidAmount, setPaidAmount] = useState(0);
-  const [orderId, setOrderId] = useState("DD" + Math.floor(100000 + Math.random() * 900000));
+  const [orderId, setOrderId] = useState("");
 
   const total = state?.total ?? subtotal;
 
   const canProceed = addr.name && addr.phone.length >= 10 && addr.pincode.length >= 6 && addr.line && addr.city && addr.stateName;
 
+  // The backend prices the order from its own catalog; we only send what was picked.
   const placeOrder = async (label) => {
-    setPayLabel(label);
-    setPaidAmount(total);
+    const payload = {
+      items: items.map((i) => ({ id: i.id, size: i.size, color: i.color, qty: i.qty })),
+      coupon: state?.coupon ?? null,
+      payment_method: label,
+      address: addr,
+    };
+    let res;
     try {
-      const payload = {
-        items: items.map((i) => ({ id: i.id, name: i.name, slug: i.slug, image: i.image, price: i.price, size: i.size, color: i.color, qty: i.qty })),
-        total,
-        subtotal: state?.subtotal ?? subtotal,
-        discount: state?.discount ?? 0,
-        shipping: state?.shipping ?? 0,
-        coupon: state?.coupon ?? null,
-        payment_method: label,
-        address: addr,
-      };
-      const res = await api.post("/orders", payload);
-      if (res.data?.order_id) setOrderId(res.data.order_id);
-    } catch {
-      /* keep local order id on failure */
+      res = await api.post("/orders", payload);
+    } catch (e) {
+      const detail = e?.response?.data?.detail;
+      throw new Error(typeof detail === "string" ? detail : "We couldn't place your order. Please try again.");
     }
-    clearCart();
+    setPayLabel(label);
+    setPaidAmount(res.data.total);
+    setOrderId(res.data.order_id);
+  };
+
+  const finishOrder = () => {
     setStep(2);
+    clearCart();
   };
 
   if (!items.length && step < 2) {
@@ -102,7 +104,7 @@ export default function Checkout() {
             <h2 className="flex items-center gap-2 font-display text-3xl text-white"><ShieldCheck size={24} className="text-lime" /> SECURE PAYMENT</h2>
             <p className="mt-1 text-sm text-[#8b8b93]">Delivering to {addr.name}, {addr.city}, {addr.stateName} — {addr.pincode}</p>
             <div className="mt-6">
-              <PaymentGateway amount={total} onSuccess={placeOrder} onBack={() => setStep(0)} />
+              <PaymentGateway amount={total} onSuccess={placeOrder} onComplete={finishOrder} onBack={() => setStep(0)} />
             </div>
           </motion.div>
         )}

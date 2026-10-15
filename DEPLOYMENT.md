@@ -5,8 +5,7 @@ Guest-only store (no login). You deploy 3 free pieces:
 2. **Render** — the backend (FastAPI API).
 3. **Netlify** — the frontend (React site).
 
-First: push this repo to GitHub using the **"Save to GitHub"** button in the Emergent
-chat. `.env` files are gitignored, so no secrets are committed.
+First: make sure this repo is on GitHub. `.env` files are gitignored, so no secrets are committed.
 
 ---
 

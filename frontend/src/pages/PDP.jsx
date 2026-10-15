@@ -44,12 +44,14 @@ export default function PDP() {
     else toast({ title: "Added to bag", description: `${product.name} • ${size}` });
   };
 
+  const gender = product.gender || "men";
+
   return (
     <div className="mx-auto max-w-7xl px-5 py-8">
       <nav className="flex items-center gap-1 text-xs text-[#8b8b93]">
         <Link to="/" className="hover:text-lime">Home</Link><ChevronRight size={12} />
-        <Link to="/men" className="hover:text-lime">Men</Link><ChevronRight size={12} />
-        <Link to={`/men/${product.category}`} className="capitalize hover:text-lime">{product.category.replace("-", " ")}</Link><ChevronRight size={12} />
+        <Link to={`/${gender}`} className="capitalize hover:text-lime">{gender}</Link><ChevronRight size={12} />
+        <Link to={`/${gender}/${product.category}`} className="capitalize hover:text-lime">{product.category.replace(/-/g, " ")}</Link><ChevronRight size={12} />
         <span className="text-white">{product.name}</span>
       </nav>
 
@@ -76,7 +78,7 @@ export default function PDP() {
         {/* Info */}
         <div>
           <Link to={`/collection/${product.collection}`} className="font-grotesk text-sm uppercase tracking-widest text-magenta hover:underline">
-            {product.collection.replace("-", " ")}
+            {product.collection.replace(/-/g, " ")}
           </Link>
           <h1 className="mt-2 font-display text-4xl leading-tight text-white sm:text-5xl">{product.name}</h1>
           <div className="mt-3 flex items-center gap-2">
