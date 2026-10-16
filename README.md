@@ -14,11 +14,11 @@ Dapper Den is that store rebuilt: a working shop that answers each buyer doubt b
 
 <sub>Browse, add to bag and check out for real. The payment screen is a sandbox, so no money moves. If the store has been idle, the first load takes about a minute.</sub>
 
-[See every screen](#every-screen) · [The marketing decisions](#the-marketing-work) · [How I'd measure it](#how-id-measure-it) · [For engineers](TECHNICAL.md)
+[▶ Watch the walkthrough (3:57)](WALKTHROUGH.md) · [See every screen](#every-screen) · [The marketing decisions](#the-marketing-work) · [How I'd measure it](#how-id-measure-it) · [For engineers](TECHNICAL.md)
 
-<a href="https://dapper-denn.netlify.app"><img src="docs/media/walkthrough-preview.gif" width="760" alt="A full purchase on Dapper Den in 30 seconds: the homepage, themed collections, search suggestions, a product page with the size guide, the bag with a coupon, the address step, UPI payment and the order confirmation"></a>
+<a href="WALKTHROUGH.md"><img src="docs/media/walkthrough-preview.gif" width="760" alt="A full purchase on Dapper Den in 30 seconds: the homepage, themed collections, search suggestions, a product page with the size guide, the bag with a coupon, the address step, UPI payment and the order confirmation"></a>
 
-<sub>A full purchase in 30 seconds: homepage, collections, search, size guide, coupon, UPI checkout and confirmation.</sub>
+<sub>A full purchase in 30 seconds. Click it for the full walkthrough with voice-over.</sub>
 
 </div>
 
@@ -113,6 +113,7 @@ I built the working store with AI coding tools, directing them from the audit ra
 | **Post-purchase trust and retention** | Order tracking without an account, a printable receipt, and a wishlist that remembers favourites |
 | **Brand identity** | Logo, dark-and-lime palette, Anton headlines and a confident streetwear voice, carried from the site into every email |
 | **Measurement planning** | A funnel metric for each change, so every fix can be tested, not assumed |
+| **Video storytelling** | A [narrated walkthrough](WALKTHROUGH.md) with chapters, plus 30-second cuts for portfolio pages and LinkedIn |
 
 <sub>Brand files: [`docs/brand`](docs/brand).</sub>
 
