@@ -22,6 +22,15 @@ Dapper Den is that store rebuilt: a working shop that answers each buyer doubt b
 
 </div>
 
+## At a glance
+
+| | |
+|---|---|
+| **The problem** | Shoppers left a real streetwear store between landing and ordering, because their doubts (shipping, COD, fit, returns) were answered too late or not at all. |
+| **What I did** | Audited the journey, rebuilt the store around one idea (answer the doubt where it comes up), planned a ₹1 lakh launch campaign, and built the retention flows into the store. |
+| **Skills** | CRO audit · messaging · merchandising · pricing and promotions · campaign planning · referral and lifecycle email · attribution · brand and content · measurement planning |
+| **See it** | [Live store](https://dapper-denn.netlify.app) · [4-minute walkthrough](https://dapper-denn.netlify.app/walkthrough/) · [One-page case study (PDF)](docs/case-study.pdf) · [Launch campaign](docs/marketing/launch-campaign.md) |
+
 ## The problem I saw
 
 Shoppers were dropping off somewhere between landing on the site and placing an order. I mapped that journey step by step and looked for the moments where a shopper had to stop and wonder.
