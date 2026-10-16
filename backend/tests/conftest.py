@@ -62,6 +62,9 @@ class FakeDB:
     def __init__(self):
         self.orders = FakeOrders()
 
+    async def command(self, name):
+        return {"ok": 1}
+
 
 @pytest.fixture
 def client(monkeypatch):

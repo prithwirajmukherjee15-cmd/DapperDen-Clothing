@@ -169,3 +169,16 @@ def test_admin_status_update_emails_customer(client, sent, monkeypatch):
     assert tracked["status"] == "Shipped"
     listed = client.get("/api/admin/orders", headers={"x-admin-token": "s3cret"}).json()
     assert listed[0]["order_id"] == order["order_id"]
+
+
+def test_health_reports_db_status(client, monkeypatch):
+    assert client.get("/api/health").json()["db"] == "ok"
+
+    async def broken(name):
+        from pymongo.errors import OperationFailure
+        raise OperationFailure("bad auth : authentication failed", code=8000, details={"codeName": "AtlasError"})
+
+    monkeypatch.setattr(client.fake_db, "command", broken)
+    r = client.get("/api/health")
+    assert r.status_code == 503
+    assert r.json()["reason"] == "OperationFailure (code 8000: AtlasError)"

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Header
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -306,6 +306,22 @@ async def update_order_status(order_id: str, payload: StatusUpdate, background: 
             send_email, (order.get("address") or {}).get("email"),
             f"Order #{oid}: {payload.status}", emails.status_html(order, SITE_URL, SUPPORT_EMAIL), tag="status")
     return {"order_id": oid, "status": payload.status}
+
+
+@api_router.get("/health")
+async def health():
+    """Uptime check: is the API up and can it reach MongoDB? Never returns secrets."""
+    try:
+        await asyncio.wait_for(db.command("ping"), timeout=10)
+        return {"api": "ok", "db": "ok", "emails": "live" if RESEND_API_KEY else "mocked"}
+    except Exception as ex:
+        reason = type(ex).__name__
+        if getattr(ex, "code", None) is not None:
+            details = getattr(ex, "details", None)
+            code_name = details.get("codeName", "") if isinstance(details, dict) else ""
+            reason += f" (code {ex.code}: {code_name})"
+        logger.error("[HEALTH] MongoDB check failed: %r", ex)
+        return JSONResponse(status_code=503, content={"api": "ok", "db": "error", "reason": reason})
 
 
 @api_router.get("/")
