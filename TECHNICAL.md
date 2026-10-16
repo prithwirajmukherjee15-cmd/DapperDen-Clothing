@@ -39,6 +39,16 @@ All routes are under `/api`.
 | GET | `/admin/orders` | Latest orders. Needs the `x-admin-token` header |
 | POST | `/admin/orders/{id}/status` | Moves an order to Packed, Shipped, Out for Delivery, Delivered or Cancelled, and emails the customer. Needs `x-admin-token` |
 | GET | `/health` | Whether the API can reach MongoDB, and whether emails are live or mocked |
+| POST | `/checkouts` | Saves the bag when a shopper finishes the address step (for bag reminders) |
+| GET | `/checkouts/{id}` | Bag contents only, for the "complete your order" link |
+| POST | `/admin/reminders/run` | Emails one reminder per bag left 1 to 48 hours ago. Call hourly. Needs `x-admin-token` |
+| GET, POST | `/feedback?order_id=&token=`, `/feedback` | The "How did it fit?" form, secured by a per-order token |
+| GET | `/products/{slug}/fit` | Fit score once three or more buyers have answered |
+| GET | `/drop` | Next drop time (Friday 8 PM IST), list size and a preview of the collection |
+| POST | `/drop-alerts` | Drop-list sign-up (email and/or WhatsApp, with consent; records `source`) |
+| GET | `/admin/drop-alerts` | The drop list. Needs `x-admin-token` |
+
+Referral and reward codes go through `/coupon/validate` and `/orders` like any other coupon. The growth features live in `backend/growth.py`.
 
 ## Guarantees
 
@@ -46,6 +56,7 @@ All routes are under `/api`.
 - **No fake confirmations.** The payment screen waits for the order to be saved. If saving fails, it shows the error and the bag is kept.
 - **Unique order IDs.** IDs are `DD` plus 10 random digits, backed by a unique database index and a retry if two ever collide.
 - **Safe emails.** Everything a customer typed is HTML-escaped. Emails are sent after the response, so a slow mail provider never delays checkout.
+- **Coupon rules are enforced on the server.** One coupon per order; referral codes only on a new customer's first order and never by the referrer; reward codes are claimed atomically, so each works once. The ₹50 prepaid discount applies to every payment method except cash on delivery.
 - **Admin is off by default.** The admin routes return 403 unless `ADMIN_TOKEN` is set, and the token is compared in constant time.
 
 ## Run it locally
@@ -72,9 +83,13 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-The 15 offline tests run against a fake database, so they need no MongoDB. They cover:
+The 26 offline tests run against a fake database, so they need no MongoDB. They cover:
 
 - server-side pricing, coupons and validation
+- the prepaid discount, referral and reward codes and their rules
+- bag reminders (sent once, never for finished orders) and the restore link
+- the fit-feedback form, its token, and the product fit score
+- drop-list sign-up validation, de-duplication and the next-drop time
 - order-ID collisions
 - tracking and receipt access
 - email escaping and content (receipt, COD wording, owner alert)

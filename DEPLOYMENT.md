@@ -97,6 +97,25 @@ curl -X POST -H "x-admin-token: YOUR_TOKEN" -H "Content-Type: application/json" 
 
 Statuses: `Confirmed`, `Packed`, `Shipped`, `Out for Delivery`, `Delivered`, `Cancelled`.
 Add `"notify": false` to update without emailing. The Track Order page shows the new status.
+Marking an order `Delivered` emails the customer a "How did it fit?" link; their answers become the
+fit score on the product page.
+
+```bash
+# The drop list (sign-ups from /drop, with the channel each came from)
+curl -H "x-admin-token: YOUR_TOKEN" https://YOUR-API.onrender.com/api/admin/drop-alerts
+```
+
+---
+
+## 6) (Optional) Bag reminders — run hourly
+Shoppers who enter their address but don't order get one reminder email 1–48 hours later. Something
+has to trigger the send every hour. The free way:
+
+1. Sign up at https://cron-job.org and create a cron job.
+2. URL: `https://YOUR-API.onrender.com/api/admin/reminders/run`, method **POST**, every hour.
+3. Under **Advanced → Headers**, add `x-admin-token` with your `ADMIN_TOKEN`.
+
+Each call returns `{"sent": n, "skipped": m}`. It also keeps the free Render instance awake.
 
 ---
 

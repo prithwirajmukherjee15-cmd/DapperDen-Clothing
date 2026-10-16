@@ -14,7 +14,7 @@ Dapper Den is that store rebuilt: a working shop that answers each buyer doubt b
 
 <sub>Browse, add to bag and check out for real. The payment screen is a sandbox, so no money moves. If the store has been idle, the first load takes about a minute.</sub>
 
-[▶ Watch the walkthrough (3:57)](https://dapper-denn.netlify.app/walkthrough/) · [See every screen](#every-screen) · [The marketing decisions](#the-marketing-work) · [How I'd measure it](#how-id-measure-it) · [For engineers](TECHNICAL.md)
+[▶ Watch the walkthrough (3:57)](https://dapper-denn.netlify.app/walkthrough/) · [See every screen](#every-screen) · [The launch campaign](docs/marketing/launch-campaign.md) · [The marketing decisions](#the-marketing-work) · [How I'd measure it](#how-id-measure-it) · [For engineers](TECHNICAL.md)
 
 <a href="https://dapper-denn.netlify.app/walkthrough/"><img src="docs/media/walkthrough-preview.gif" width="760" alt="A full purchase on Dapper Den in 30 seconds: the homepage, themed collections, search suggestions, a product page with the size guide, the bag with a coupon, the address step, UPI payment and the order confirmation"></a>
 
@@ -53,7 +53,29 @@ Why this, and not the usual fixes:
 4. **Decide.** Each product page shows the price against the MRP with the saving in %, the rating and review count, a size guide one tap away, and shipping, returns and secure-payment reassurance next to *Add to Bag*.
 5. **Bag.** The coupon shows exactly what it saves, the summary separates the product discount from the coupon, and *Complete the look* suggests more pieces before checkout.
 6. **Checkout in three steps.** Address, payment, confirmation. Payment opens on UPI (Google Pay, PhonePe, Paytm, BHIM), with cards, no-cost EMI from ₹3,000, netbanking, wallets and COD a tap away. No account needed.
-7. **After the order.** A branded receipt email arrives within seconds. The customer can print or save the receipt, and track the order with just the order ID and phone number. When the order ships, they get an update email.
+7. **After the order.** A branded receipt email arrives within seconds, with the customer's own "give ₹200, get ₹200" code to share on WhatsApp. They can print or save the receipt and track the order with just the order ID and phone number. When it ships they get an update, and when it's delivered they're asked how it fit.
+
+## Beyond the rebuild: launch and retention
+
+The rebuild fixed what happens once a shopper arrives. The next job is getting the right shoppers there, and bringing them back. **[Read the launch campaign plan →](docs/marketing/launch-campaign.md)**
+
+<p>
+<img src="docs/marketing/creatives/feed-drop-announce.jpg" width="31%" alt="Feed post: Anime Legends drops Friday">
+<img src="docs/marketing/creatives/story-countdown.jpg" width="21%" alt="Story: countdown to the drop">
+<img src="docs/marketing/creatives/feed-referral.jpg" width="31%" alt="Feed post: give ₹200, get ₹200">
+</p>
+
+**The Friday Drop.** A launch campaign for the Anime Legends collection, built around a weekly ritual (*Drops Friday, 8 PM*) and an owned audience rather than one-off clicks. The plan covers the audience and insight, message pillars, offers, channel mix with creator seeding, a two-week calendar, a ₹1 lakh budget with funnel maths and an honest payback analysis, KPIs, tests and risks. The [drop page](https://dapper-denn.netlify.app/drop) is live: a countdown, a collection preview, and an email/WhatsApp sign-up with consent that records which channel each sign-up came from.
+
+**Retention flows, built into the store:**
+
+| Flow | What it does |
+|---|---|
+| **₹50 off for paying online** | Shown at payment, with a nudge on the cash-on-delivery panel. Cash orders cost more and get refused more often |
+| **Bag reminder** | One email 1 to 48 hours after a shopper leaves checkout, with a link that refills their bag on any device |
+| **Give ₹200, get ₹200** | Every order gets a referral code and a WhatsApp share button. A friend's first order unlocks a one-time ₹200 code for the referrer |
+| **"How did it fit?"** | Asked when an order is delivered. The answers become a "true to size" score on the product page once three buyers have answered |
+| **Drop list** | Sign-up confirmation with a list-only code (EARLYDROP) |
 
 ## Every screen
 
@@ -79,7 +101,8 @@ The store is the prototype. Measuring it needs real traffic and analytics events
 - **Cart abandonment rate.** It tests whether the up-front trust messages and the UPI-first checkout keep shoppers going.
 - **Size-related return rate.** It tests whether the size guide reduces returns.
 - **Average order value** around the ₹1,499 free-shipping threshold, and coupon redemption. They test whether the threshold and coupons lift basket size or only give margin away.
-- **Payment-method mix** (UPI, COD, cards). COD orders cost more to fulfil and get refused more often, so the share of prepaid orders matters as much as the order count.
+- **Payment-method mix** (UPI, COD, cards). COD orders cost more to fulfil and get refused more often, so the share of prepaid orders matters as much as the order count. The ₹50 prepaid nudge is the lever to test.
+- **Growth loops:** drop-list sign-ups and cost per sign-up by channel, bag-reminder recovery rate, and the share of orders that come from a referral code. Targets are in the [campaign plan](docs/marketing/launch-campaign.md#8-measurement).
 
 ## What I know, and what I'm still assuming
 
@@ -107,10 +130,14 @@ I built the working store with AI coding tools, directing them from the audit ra
 | **Messaging and objection handling** | Trust bar, homepage promise strip and product-page reassurance answer shipping, COD, returns and fabric before checkout |
 | **Merchandising** | Six fan-themed collections, Bestseller, New and Trending badges, MRP strike-through with % off, related products from the same collection |
 | **Cross-sell and basket building** | *Complete the look* in the bag, plus the free-shipping threshold at ₹1,499 as an order-value nudge |
-| **Pricing and promotions** | A coupon ladder: DAPPER10 (10% off), STREET20 (20% off) and FLAT300 (₹300 off over ₹1,499), validated on the server; no-cost EMI from ₹3,000 |
+| **Pricing and promotions** | A coupon ladder: DAPPER10 (10% off), STREET20 (20% off) and FLAT300 (₹300 off over ₹1,499), validated on the server; no-cost EMI from ₹3,000; a ₹50 prepaid nudge to cut cash-on-delivery risk |
+| **Campaign planning** | [The Friday Drop](docs/marketing/launch-campaign.md): audience insight, message pillars, offers, channel mix, creator seeding, calendar, budget with funnel maths and payback, KPIs and tests |
+| **Content and creative** | Three launch creatives (a feed post, a countdown story, a referral post), and a [drop landing page](https://dapper-denn.netlify.app/drop) with a live countdown |
+| **Referral marketing** | Give ₹200, get ₹200: a code on every order, WhatsApp sharing, automatic ₹200 rewards, first-order and self-use rules |
 | **Checkout optimisation for India** | 3-step guest checkout, UPI first, then cards, EMI, netbanking, wallets and COD; Indian cities and states, prices in ₹ inclusive of taxes |
-| **Lifecycle and CRM email** | A branded order receipt, shipping-update emails at each stage, and a new-order alert for the store owner |
-| **Post-purchase trust and retention** | Order tracking without an account, a printable receipt, and a wishlist that remembers favourites |
+| **Lifecycle and CRM email** | A branded receipt, shipping updates at each stage, a one-time bag reminder, the referral reward, a post-delivery fit question, drop-list confirmation, and a new-order alert for the store owner |
+| **Post-purchase trust and retention** | Order tracking without an account, a printable receipt, a wishlist, and a "true to size" score built from real buyers' answers |
+| **Attribution** | UTM conventions per channel; the drop page records the source of every sign-up |
 | **Brand identity** | Logo, dark-and-lime palette, Anton headlines and a confident streetwear voice, carried from the site into every email |
 | **Measurement planning** | A funnel metric for each change, so every fix can be tested, not assumed |
 | **Video storytelling** | A [narrated walkthrough](https://dapper-denn.netlify.app/walkthrough/) with chapters ([chapter list](WALKTHROUGH.md)), plus 30-second cuts for portfolio pages and LinkedIn |
@@ -126,6 +153,6 @@ React 19, Tailwind and Framer Motion on Netlify; a FastAPI API with MongoDB Atla
 - **Orders are priced on the server.** The browser only sends what was picked, so a tampered cart can't change the price.
 - **Checkout never fakes a success.** A failed order shows an error and keeps the bag; *Order confirmed* only appears once the order is saved.
 - **Emails go out after the order is saved**, so a slow mail provider never delays checkout. All customer input is escaped.
-- 15 offline API tests cover pricing, coupons, tracking, receipts, emails and the admin endpoints.
+- 26 offline API tests cover pricing, coupons, referrals, bag reminders, fit feedback, the drop list, tracking, receipts, emails and the admin endpoints.
 
 Architecture, API, setup, tests and deployment are in **[TECHNICAL.md](TECHNICAL.md)**.
