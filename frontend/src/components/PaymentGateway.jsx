@@ -29,9 +29,9 @@ const GPayLogo = () => (
   </span>
 );
 const PhonePeLogo = () => <span className="rounded bg-[#5f259f] px-1.5 py-0.5 text-[11px] font-bold text-white">PhonePe</span>;
-const PaytmLogo = () => <span className="text-sm font-extrabold"><span className="text-[#002970]">pay</span><span className="text-[#00baf2]">tm</span></span>;
-const BhimLogo = () => <span className="text-xs font-bold text-[#e77817]">BHIM</span>;
-const RazorpayLogo = () => <span className="text-sm font-bold text-[#3395FF]">Razorpay</span>;
+const PaytmLogo = () => <span className="text-sm font-extrabold"><span className="text-[#002970]">pay</span><span className="text-[#0079a8]">tm</span></span>;
+const BhimLogo = () => <span className="text-xs font-bold text-[#b35a00]">BHIM</span>;
+const QuickPayLogo = () => <span className="text-sm font-bold text-[#1a6fd6]">One-tap pay</span>;
 
 /* ----------------------------- Card detection ------------------------------ */
 function detectCard(number) {
@@ -53,7 +53,7 @@ const METHODS = [
   { id: "upi", label: "UPI", sub: "GPay / PhonePe / Paytm / BHIM", icon: Smartphone, tag: "Recommended" },
   { id: "card", label: "Cards", sub: "Visa, Mastercard, Amex, RuPay", icon: CreditCard },
   { id: "emi", label: "No Cost EMI", sub: "3 / 6 / 9 / 12 months", icon: CalendarClock, minAmount: 3000, tag: "0% interest" },
-  { id: "razorpay", label: "Razorpay", sub: "Secure quick checkout", icon: ShieldCheck },
+  { id: "razorpay", label: "One-tap pay", sub: "Saved cards and UPI", icon: ShieldCheck },
   { id: "paytm", label: "Paytm", sub: "Wallet & Postpaid", icon: Wallet },
   { id: "netbanking", label: "Netbanking", sub: "All Indian banks", icon: Landmark },
   { id: "wallet", label: "Wallets", sub: "Amazon Pay, Mobikwik", icon: Wallet },
@@ -129,7 +129,7 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 font-display text-sm">DD</div>
           <div>
             <p className="text-sm font-semibold leading-tight">Dapper Den</p>
-            <p className="flex items-center gap-1 text-[11px] text-white/70"><Lock size={11} /> Secured by Razorpay</p>
+            <p className="flex items-center gap-1 text-[11px] text-white/70"><Lock size={11} /> Demo sandbox: no real payment</p>
           </div>
         </div>
         <div className="text-right">
@@ -143,11 +143,11 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
         {/* Method rail */}
         <div className="min-w-0 border-b border-slate-100 bg-slate-50 p-2 md:border-b-0 md:border-r">
           <p className="hidden px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 md:block">Payment Options</p>
-          <div className="flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">
+          <div className="grid grid-cols-2 gap-1.5 md:flex md:flex-col">
             {availableMethods.map((m) => (
               <button key={m.id} onClick={() => { setMethod(m.id); setErr(""); }}
                 data-testid={`pay-method-${m.id}`}
-                className={`flex min-w-[150px] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition md:min-w-0 ${method === m.id ? "bg-white shadow-sm ring-1 ring-[#3395FF]" : "hover:bg-white/70"}`}>
+                className={`flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${method === m.id ? "bg-white shadow-sm ring-1 ring-[#3395FF]" : "hover:bg-white/70"}`}>
                 <m.icon size={18} className={method === m.id ? "text-[#3395FF]" : "text-slate-400"} />
                 <div className="flex-1">
                   <p className="text-[13px] font-semibold leading-tight">{m.label}</p>
@@ -263,8 +263,8 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
               )}
 
               {method === "razorpay" && (
-                <BrandQuickPay amount={amount} testid="pay-panel-razorpay" accent="#3395FF" title={<RazorpayLogo />}
-                  desc="One-tap secure checkout across cards, UPI, netbanking & wallets." onPay={() => runPayment("Razorpay")} />
+                <BrandQuickPay amount={amount} testid="pay-panel-razorpay" accent="#3395FF" title={<QuickPayLogo />}
+                  desc="One-tap secure checkout across cards, UPI, netbanking & wallets." onPay={() => runPayment("One-tap pay")} />
               )}
               {method === "paytm" && (
                 <BrandQuickPay amount={amount} testid="pay-panel-paytm" accent="#00baf2" title={<PaytmLogo />}
@@ -315,7 +315,7 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
             </motion.div>
           </AnimatePresence>
 
-          <button onClick={onBack} className="mt-5 text-xs font-medium text-slate-400 hover:text-slate-600" data-testid="gateway-back">← Change delivery address</button>
+          <button onClick={onBack} className="mt-5 text-xs font-medium text-slate-600 hover:text-slate-900" data-testid="gateway-back">← Change delivery address</button>
         </div>
       </div>
 
@@ -351,7 +351,7 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
 function PayBtn({ amount, onClick, label, testid }) {
   return (
     <button onClick={onClick} data-testid={testid}
-      className="mt-2 w-full rounded-xl bg-[#3395FF] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#3395FF]/30 transition hover:bg-[#1a7ae6]">
+      className="mt-2 w-full rounded-xl bg-[#1a6fd6] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#1a6fd6]/30 transition hover:bg-[#155bb0]">
       {label || `Pay ${formatINR(amount)}`}
     </button>
   );

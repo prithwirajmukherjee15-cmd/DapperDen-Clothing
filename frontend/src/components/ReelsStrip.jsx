@@ -7,7 +7,7 @@ import Reveal from "./Reveal";
 // version with sound. Small "-web" files keep the homepage light; the full files load only on tap.
 const REELS = [
   { id: "drop", title: "Drops Friday", sub: "Anime Legends · 8 PM IST" },
-  { id: "fit", title: "Will it fit?", sub: "Size guide + real fit score" },
+  { id: "fit", title: "Will it fit?", sub: "Size guide + fit notes" },
   { id: "pay", title: "Pay your way", sub: "UPI first · ₹50 off · COD" },
   { id: "refer", title: "Give ₹200, get ₹200", sub: "Bring your squad" },
 ];

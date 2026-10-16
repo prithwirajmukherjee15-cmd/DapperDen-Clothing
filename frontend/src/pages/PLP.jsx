@@ -7,14 +7,8 @@ import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
-const COLOR_OPTS = [
-  { name: "Black", hex: "#111114" },
-  { name: "Off White", hex: "#ece9df" },
-  { name: "Lime", hex: "#c6ff3d" },
-  { name: "Slate", hex: "#3a3f4b" },
-  { name: "Maroon", hex: "#5e1f2b" },
-];
+const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-11Y", "12-13Y", "UK6", "UK7", "UK8", "UK9", "UK10", "UK11", "One Size"];
+const TYPE_LABELS = { "t-shirts": "T-shirts", oversized: "Oversized", hoodies: "Hoodies", joggers: "Joggers", shirts: "Shirts", dresses: "Dresses", accessories: "Accessories" };
 const SORTS = [
   { id: "featured", label: "Featured" },
   { id: "price-asc", label: "Price: Low to High" },
@@ -40,6 +34,12 @@ export default function PLP({ mode, gender = "men" }) {
   }, [slug, mode, gender, products]);
 
   const [sizes, setSizes] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [genders, setGenders] = useState([]);
+  // Filter options come from what's actually on this page (kids ages, shoe sizes, the types in a collection).
+  const sizeOpts = useMemo(() => SIZE_ORDER.filter((s) => base.some((p) => p.sizes.includes(s))), [base]);
+  const typeOpts = useMemo(() => [...new Set(base.map((p) => p.category))], [base]);
+  const genderOpts = useMemo(() => ["men", "women", "kids"].filter((g) => base.some((p) => (p.gender || "men") === g)), [base]);
   const [maxPrice, setMaxPrice] = useState(3600);
   const [sort, setSort] = useState("featured");
   const [mobileFilter, setMobileFilter] = useState(false);
@@ -47,6 +47,8 @@ export default function PLP({ mode, gender = "men" }) {
   const filtered = useMemo(() => {
     let list = base.filter((p) => p.price <= maxPrice);
     if (sizes.length) list = list.filter((p) => sizes.some((s) => p.sizes.includes(s)));
+    if (types.length) list = list.filter((p) => types.includes(p.category));
+    if (genders.length) list = list.filter((p) => genders.includes(p.gender || "men"));
     switch (sort) {
       case "price-asc": list = [...list].sort((a, b) => a.price - b.price); break;
       case "price-desc": list = [...list].sort((a, b) => b.price - a.price); break;
@@ -55,11 +57,24 @@ export default function PLP({ mode, gender = "men" }) {
       default: break;
     }
     return list;
-  }, [base, sizes, maxPrice, sort]);
+  }, [base, sizes, types, genders, maxPrice, sort]);
 
   const toggle = (arr, set, val) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
-  const clearAll = () => { setSizes([]); setMaxPrice(3600); };
+  const clearAll = () => { setSizes([]); setTypes([]); setGenders([]); setMaxPrice(3600); };
+  const Chips = ({ label, opts, value, set, name = (o) => o }) => (
+    <div>
+      <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-[#8b8b93]">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {opts.map((o) => (
+          <button key={o} onClick={() => toggle(value, set, o)} aria-pressed={value.includes(o)}
+            className={`rounded-md border px-3 py-1.5 text-sm font-medium transition ${value.includes(o) ? "border-lime bg-lime text-[#0a0a0b]" : "border-[#2a2a30] text-white hover:border-lime"}`}>
+            {name(o)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const title = meta ? meta.name : "All Products";
   const banner = mode === "collection" && meta ? meta.banner : null;
@@ -70,17 +85,9 @@ export default function PLP({ mode, gender = "men" }) {
         <h3 className="font-grotesk font-semibold text-white">Filters</h3>
         <button onClick={clearAll} className="text-xs text-lime hover:underline">Clear all</button>
       </div>
-      <div>
-        <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-[#8b8b93]">Size</p>
-        <div className="flex flex-wrap gap-2">
-          {SIZES.map((s) => (
-            <button key={s} onClick={() => toggle(sizes, setSizes, s)}
-              className={`h-9 w-11 rounded-md border text-sm font-medium transition ${sizes.includes(s) ? "border-lime bg-lime text-[#0a0a0b]" : "border-[#2a2a30] text-white hover:border-lime"}`}>
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
+      {genderOpts.length > 1 && <Chips label="For" opts={genderOpts} value={genders} set={setGenders} name={(g) => GENDER_LABELS[g]} />}
+      {typeOpts.length > 1 && <Chips label="Type" opts={typeOpts} value={types} set={setTypes} name={(t) => TYPE_LABELS[t] || t} />}
+      {sizeOpts.length > 1 && <Chips label="Size" opts={sizeOpts} value={sizes} set={setSizes} />}
       <div>
         <p className="mb-3 font-grotesk text-xs font-bold uppercase tracking-wider text-[#8b8b93]">Max Price</p>
         <input type="range" min="600" max="3600" step="100" value={maxPrice}
@@ -118,8 +125,8 @@ export default function PLP({ mode, gender = "men" }) {
           </button>
           <p className="hidden text-sm text-[#8b8b93] lg:block">{filtered.length} products</p>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-[#8b8b93]">Sort:</span>
-            <select value={sort} onChange={(e) => setSort(e.target.value)}
+            <label htmlFor="plp-sort" className="text-sm text-[#8b8b93]">Sort:</label>
+            <select id="plp-sort" value={sort} onChange={(e) => setSort(e.target.value)}
               className="rounded-lg border border-[#2a2a30] bg-[#131316] px-3 py-2 text-sm text-white outline-none focus:border-lime">
               {SORTS.map((s) => (<option key={s.id} value={s.id} className="bg-[#131316]">{s.label}</option>))}
             </select>
@@ -155,7 +162,7 @@ export default function PLP({ mode, gender = "men" }) {
               className="fixed inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t border-[#2a2a30] bg-[#0a0a0b] p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-2xl text-white">FILTERS</h3>
-                <button onClick={() => setMobileFilter(false)}><X className="text-white" /></button>
+                <button onClick={() => setMobileFilter(false)} aria-label="Close filters"><X className="text-white" /></button>
               </div>
               <FilterPanel />
               <button onClick={() => setMobileFilter(false)} className="mt-6 w-full rounded-full bg-lime py-3 font-bold text-[#0a0a0b]">

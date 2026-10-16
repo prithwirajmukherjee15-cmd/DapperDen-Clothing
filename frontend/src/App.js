@@ -27,6 +27,8 @@ function ScrollToTop() {
   const { pathname, search } = useLocation();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
+    // Keyboard and screen-reader users start at the new page's content, not back at the top of the header.
+    document.getElementById("main")?.focus({ preventScroll: true });
   }, [pathname]);
   // Remember a friend's referral code from a shared link (?ref=CODE); the bag applies it.
   useEffect(() => {
@@ -40,9 +42,10 @@ function AppRoutes() {
   return (
     <>
       <ScrollToTop />
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-full focus:bg-lime focus:px-4 focus:py-2 focus:font-bold focus:text-[#0a0a0b]">Skip to content</a>
       <MarqueeBar />
       <Navbar />
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/men" element={<CategoryHub gender="men" />} />

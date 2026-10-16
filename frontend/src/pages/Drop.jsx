@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bell, Check, Mail, MessageCircle, Zap } from "lucide-react";
 import api from "../api";
@@ -9,6 +9,17 @@ import ProductCard from "../components/ProductCard";
 // Sign-ups record which link they came from (?utm_source=instagram etc.) so each channel can be measured.
 const pad = (n) => String(n).padStart(2, "0");
 const fans = (n) => (n === 1 ? "1 fan is" : `${n.toLocaleString("en-IN")} fans are`);
+
+// Mirrors growth.next_drop on the server, so the countdown is right before the API answers (or if it doesn't).
+function nextFriday8pmIST(from = Date.now()) {
+  const IST = 5.5 * 36e5;
+  const t = new Date(from + IST);
+  const target = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate(), 20, 0, 0));
+  let days = (5 - t.getUTCDay() + 7) % 7;
+  if (days === 0 && t >= target) days = 7;
+  target.setUTCDate(target.getUTCDate() + days);
+  return new Date(target.getTime() - IST).toISOString();
+}
 
 function useCountdown(target) {
   const [now, setNow] = useState(Date.now());
@@ -25,15 +36,14 @@ export default function Drop() {
   const [info, setInfo] = useState(null);
   const [form, setForm] = useState({ email: "", whatsapp: "", consent: false });
   const [state, setState] = useState({ status: "idle", error: "", result: null });
-  const left = useCountdown(info?.drops_at);
+  const dropsAt = info?.drops_at || nextFriday8pmIST();
+  const left = useCountdown(dropsAt);
 
   useEffect(() => {
     api.get("/drop").then((r) => setInfo(r.data)).catch(() => setInfo({ preview: [], subscribers: 0 }));
   }, []);
 
-  const when = info?.drops_at
-    ? new Date(info.drops_at).toLocaleString("en-IN", { weekday: "long", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })
-    : "Friday, 8 PM";
+  const when = new Date(dropsAt).toLocaleString("en-IN", { weekday: "long", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
   const submit = async (e) => {
     e.preventDefault();
@@ -57,7 +67,7 @@ export default function Drop() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <p className="flex items-center gap-2 font-grotesk text-xs font-bold uppercase tracking-[0.3em] text-lime"><Zap size={14} /> The Friday drop</p>
           <h1 className="mt-3 font-display text-6xl leading-[0.95] text-white sm:text-7xl">ANIME LEGENDS<br /><span className="text-lime">DROPS FRIDAY.</span></h1>
-          <p className="mt-4 max-w-lg text-[#c9c9cf]">Ink, neon and battle cries on 240 GSM heavyweight cotton. Limited pieces, every Friday at 8 PM IST. Get on the list to hear first and take 15% off your first drop order.</p>
+          <p className="mt-4 max-w-lg text-[#c9c9cf]">Ink, neon and battle cries on 240 GSM heavyweight cotton. New pieces every Friday at 8 PM IST. Get on the list to hear first and take 15% off orders above ₹1,499.</p>
 
           <div className="mt-8 flex gap-3" data-testid="countdown">
             {[["Days", left.d], ["Hours", left.h], ["Mins", left.m], ["Secs", left.s]].map(([l, v]) => (
@@ -109,6 +119,7 @@ export default function Drop() {
                 className="mt-6 w-full rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition hover:bg-lime-dim disabled:opacity-50">
                 {state.status === "loading" ? "Adding you…" : "Notify me + get 15% off"}
               </button>
+              <p className="mt-2 text-center text-xs text-[#8b8b93]">15% off orders above ₹1,499. <Link to="/help#referral" className="underline">Bring friends: give ₹200, get ₹200</Link></p>
               {info?.subscribers > 0 && <p className="mt-3 text-center text-xs text-[#8b8b93]">{fans(info.subscribers).replace(/ (is|are)$/, "")} already on the list</p>}
             </form>
           )}
@@ -118,7 +129,7 @@ export default function Drop() {
       {info?.preview?.length > 0 && (
         <section className="mt-16">
           <h2 className="font-display text-3xl text-white">FIRST LOOK</h2>
-          <p className="mt-1 text-sm text-[#8b8b93]">A preview of the Anime Legends collection.</p>
+          <p className="mt-1 text-sm text-[#8b8b93]">Available now from the Anime Legends collection. New pieces join every Friday.</p>
           <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
             {info.preview.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>

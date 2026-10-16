@@ -1,12 +1,18 @@
 import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Plus, Star } from "lucide-react";
 import { formatINR } from "../mock/mock";
 import { useCart } from "../context/CartContext";
 
-export default function ProductCard({ product }) {
+// Stock-photo CDNs can resize: cards use a 400px image instead of the 800px one.
+const small = (u) => (/images\.(unsplash|pexels)\.com/.test(u) ? u.replace("w=800", "w=400") : u);
+
+export default function ProductCard({ product, showGender = false }) {
   const { toggleWishlist, inWishlist, addToCart } = useCart();
+  const navigate = useNavigate();
+  const quickSize = product.sizes.includes("M") ? "M" : product.sizes.length === 1 ? product.sizes[0] : null;
+  const [added, setAdded] = useState(false);
   const [hover, setHover] = useState(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const ref = useRef(null);
@@ -36,7 +42,7 @@ export default function ProductCard({ product }) {
       <Link to={`/product/${product.slug}`} className="block">
         <div className="relative overflow-hidden rounded-xl bg-[#131316] aspect-[3/4]">
           <img
-            src={img}
+            src={small(img)}
             alt={product.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -51,7 +57,8 @@ export default function ProductCard({ product }) {
               e.preventDefault();
               toggleWishlist(product.id);
             }}
-            aria-label="wishlist"
+            aria-label={wished ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            aria-pressed={wished}
             className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/50 backdrop-blur transition hover:bg-black/70"
           >
             <Heart
@@ -62,11 +69,15 @@ export default function ProductCard({ product }) {
           <button
             onClick={(e) => {
               e.preventDefault();
-              addToCart(product, "M", "Colour 1", 1);
+              // Quick Add only when a sensible size exists; otherwise open the product to pick one.
+              if (!quickSize) { navigate(`/product/${product.slug}`); return; }
+              addToCart(product, quickSize, "", 1);
+              setAdded(true); setTimeout(() => setAdded(false), 1600);
             }}
-            className="absolute inset-x-3 bottom-3 flex translate-y-14 items-center justify-center gap-2 rounded-lg bg-lime py-2.5 text-sm font-bold text-[#0a0a0b] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+            aria-label={quickSize ? `Quick add ${product.name}, size ${quickSize}` : `Choose a size for ${product.name}`}
+            className="absolute inset-x-3 bottom-3 flex translate-y-14 items-center justify-center gap-2 rounded-lg bg-lime py-2.5 text-sm font-bold text-[#0a0a0b] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
           >
-            <Plus size={16} /> Quick Add
+            <Plus size={16} /> {added ? "Added" : quickSize ? `Quick Add · ${quickSize}` : "Choose size"}
           </button>
         </div>
       </Link>
@@ -75,6 +86,7 @@ export default function ProductCard({ product }) {
           <Star size={12} className="fill-lime text-lime" />
           <span className="text-white">{product.rating}</span>
           <span>({product.reviews})</span>
+          {showGender && <span className="ml-auto rounded bg-[#1c1c21] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#c9c9cf]">{product.gender || "men"}</span>}
         </div>
         <Link to={`/product/${product.slug}`}>
           <h3 className="mt-1 line-clamp-1 font-grotesk text-sm font-medium text-white transition group-hover:text-lime">

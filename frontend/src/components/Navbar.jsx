@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, Heart, PackageSearch, Menu, X, ChevronDown } from "lucide-react";
@@ -27,13 +28,18 @@ export default function Navbar() {
   const [hovered, setHovered] = useState(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState(false);
   const boxRef = useRef(null);
+  const mobileBoxRef = useRef(null);
+  const menuBtnRef = useRef(null);
+  const drawerRef = useRef(null);
 
   const results = searchProducts(q).slice(0, 5);
 
   useEffect(() => {
     const h = (e) => {
-      if (boxRef.current && !boxRef.current.contains(e.target)) setFocus(false);
+      const inBox = [boxRef, mobileBoxRef].some((r) => r.current && r.current.contains(e.target));
+      if (!inBox) setFocus(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -44,15 +50,89 @@ export default function Navbar() {
     if (q.trim()) {
       navigate(`/search?q=${encodeURIComponent(q.trim())}`);
       setFocus(false);
+      setMobileSearch(false);
+      setMenuOpen(false);
     }
   };
+
+  // Close the menu and mobile search on navigation.
+  useEffect(() => { setMenuOpen(false); setMobileSearch(false); }, [location.pathname]);
+
+  // Menu drawer: focus moves into it, Tab stays inside, Escape closes it and focus returns to the menu button.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const t = setTimeout(() => drawerRef.current?.querySelector("button, a, input")?.focus(), 50);
+    const onKey = (e) => {
+      if (e.key === "Escape") { setMenuOpen(false); return; }
+      if (e.key !== "Tab" || !drawerRef.current) return;
+      const nodes = drawerRef.current.querySelectorAll("a[href], button, input");
+      if (!nodes.length) return;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    const btn = menuBtnRef.current;
+    return () => { clearTimeout(t); document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; btn?.focus(); };
+  }, [menuOpen]);
+
+  const suggestions = (onPick) => (
+    <AnimatePresence>
+      {focus && q.trim() && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#2a2a30] bg-[#131316] dd-shadow"
+        >
+          {results.length ? (
+            results.map((p) => (
+              <Link
+                key={p.id}
+                to={`/product/${p.slug}`}
+                onClick={onPick}
+                className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[#1c1c21]"
+              >
+                <img src={p.images[0]} alt="" className="h-12 w-10 rounded object-cover" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-white">{p.name}</p>
+                  <p className="text-xs text-lime">{formatINR(p.price)} <span className="capitalize text-[#8b8b93]">· {p.gender || "men"}</span></p>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="px-4 py-4 text-sm text-[#8b8b93]">No matches for “{q}”</p>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  const searchForm = (autoFocus) => (
+    <form onSubmit={submitSearch} role="search" className="flex items-center gap-2 rounded-full border border-[#2a2a30] bg-[#131316] px-4 py-2 transition focus-within:border-lime">
+      <Search size={16} className="text-[#8b8b93]" aria-hidden="true" />
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onFocus={() => setFocus(true)}
+        autoFocus={autoFocus}
+        type="search"
+        aria-label="Search products"
+        placeholder="Search the drip..."
+        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#8b8b93]"
+      />
+    </form>
+  );
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#2a2a30] bg-[#0a0a0b]/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-4">
-        <motion.button whileTap={{ scale: 0.85 }} className="lg:hidden" onClick={() => setMenuOpen(true)} aria-label="menu">
+        <button ref={menuBtnRef} className="lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu"
+          aria-expanded={menuOpen} aria-controls="mobile-menu" data-testid="nav-menu">
           <Menu className="text-white" />
-        </motion.button>
+        </button>
 
         <Link to="/" className="font-display text-2xl tracking-wide text-white shrink-0">
           DAPPER<span className="text-lime">DEN</span>
@@ -143,59 +223,26 @@ export default function Navbar() {
 
         {/* Search */}
         <div ref={boxRef} className="relative ml-auto hidden max-w-xs flex-1 md:block">
-          <form onSubmit={submitSearch} className="flex items-center gap-2 rounded-full border border-[#2a2a30] bg-[#131316] px-4 py-2 transition focus-within:border-lime">
-            <Search size={16} className="text-[#8b8b93]" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onFocus={() => setFocus(true)}
-              placeholder="Search the drip..."
-              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#8b8b93]"
-            />
-          </form>
-          <AnimatePresence>
-            {focus && q.trim() && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#2a2a30] bg-[#131316] dd-shadow"
-              >
-                {results.length ? (
-                  results.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/product/${p.slug}`}
-                      onClick={() => setFocus(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[#1c1c21]"
-                    >
-                      <img src={p.images[0]} alt={p.name} className="h-12 w-10 rounded object-cover" />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm text-white">{p.name}</p>
-                        <p className="text-xs text-lime">{formatINR(p.price)}</p>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="px-4 py-4 text-sm text-[#8b8b93]">No matches for “{q}”</p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {searchForm(false)}
+          {suggestions(() => setFocus(false))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-4 md:ml-0">
           <Link to="/drop" data-testid="nav-drop"
             className="hidden rounded-full border border-lime/60 px-3 py-1 font-grotesk text-xs font-bold uppercase tracking-wider text-lime transition hover:bg-lime hover:text-[#0a0a0b] md:inline-block">
             Friday drop
           </Link>
+          <button onClick={() => { setMobileSearch((v) => !v); setFocus(true); }} className="text-white transition hover:text-lime md:hidden"
+            aria-label="Search" aria-expanded={mobileSearch} data-testid="nav-search-mobile">
+            <Search size={20} />
+          </button>
           <motion.div whileTap={{ scale: 0.8 }} className="relative hidden sm:block">
-            <Link to="/track" className="text-white transition hover:text-lime" aria-label="track order" data-testid="nav-track-order">
+            <Link to="/track" className="text-white transition hover:text-lime" aria-label="Track order" title="Track order" data-testid="nav-track-order">
               <PackageSearch size={20} />
             </Link>
           </motion.div>
           <motion.div whileTap={{ scale: 0.8 }} className="relative">
-            <Link to="/wishlist" className="text-white transition hover:text-lime" aria-label="wishlist" data-testid="nav-wishlist">
+            <Link to="/wishlist" className="text-white transition hover:text-lime" aria-label="Wishlist" data-testid="nav-wishlist">
               <Heart size={20} />
               {wishlist.length > 0 && (
                 <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-magenta px-1 text-[10px] font-bold text-white">
@@ -205,7 +252,7 @@ export default function Navbar() {
             </Link>
           </motion.div>
           <motion.div whileTap={{ scale: 0.8 }} className="relative">
-            <Link to="/cart" className="text-white transition hover:text-lime" aria-label="cart">
+            <Link to="/cart" className="text-white transition hover:text-lime" aria-label={count ? `Bag, ${count} items` : "Bag"}>
               <ShoppingBag size={20} />
               {count > 0 && (
                 <motion.span key={count} initial={{ scale: 0.4 }} animate={{ scale: 1 }} className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-lime px-1 text-[10px] font-bold text-[#0a0a0b]">
@@ -217,38 +264,64 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      <AnimatePresence>
-        {menuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 z-50 bg-black/60 lg:hidden"
-            />
-            <motion.aside
-              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 260 }}
-              className="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto border-r border-[#2a2a30] bg-[#0a0a0b] p-6 lg:hidden"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-display text-2xl text-white">DAPPER<span className="text-lime">DEN</span></span>
-                <button onClick={() => setMenuOpen(false)}><X className="text-white" /></button>
-              </div>
-              {GENDERS.map((g) => (
-                <div key={g.key} className="mt-7">
-                  <Link onClick={() => setMenuOpen(false)} to={`/${g.key}`} className="font-display text-xl text-lime">{g.label.toUpperCase()}</Link>
+      {/* Mobile search */}
+      {mobileSearch && (
+        <div ref={mobileBoxRef} className="relative mx-auto max-w-7xl px-5 pb-3 md:hidden" data-testid="mobile-search">
+          {searchForm(true)}
+          {suggestions(() => { setFocus(false); setMobileSearch(false); })}
+        </div>
+      )}
+
+      {/* Mobile drawer. Rendered into <body>: the header's backdrop blur would otherwise clip a fixed child to the header's height. */}
+      {createPortal(
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setMenuOpen(false)}
+                className="fixed inset-0 z-[60] bg-black/60 lg:hidden"
+              />
+              <motion.aside
+                ref={drawerRef} id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menu" data-testid="mobile-menu"
+                initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 260 }}
+                className="fixed inset-y-0 left-0 z-[60] w-80 max-w-[85vw] overflow-y-auto border-r border-[#2a2a30] bg-[#0a0a0b] p-6 lg:hidden"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-display text-2xl text-white">DAPPER<span className="text-lime">DEN</span></span>
+                  <button onClick={() => setMenuOpen(false)} aria-label="Close menu"><X className="text-white" /></button>
+                </div>
+                <div className="relative mt-5">{searchForm(false)}</div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link to="/drop" className="rounded-full border border-lime/60 px-3 py-1 font-grotesk text-xs font-bold uppercase tracking-wider text-lime">Friday drop</Link>
+                  <Link to="/men/accessories" className="rounded-full border border-[#2a2a30] px-3 py-1 font-grotesk text-xs font-semibold text-white">Sneakers &amp; caps</Link>
+                  <Link to="/track" className="rounded-full border border-[#2a2a30] px-3 py-1 font-grotesk text-xs font-semibold text-white">Track order</Link>
+                </div>
+                {GENDERS.map((g) => (
+                  <div key={g.key} className="mt-7">
+                    <Link to={`/${g.key}`} className="font-display text-xl text-lime">{g.label.toUpperCase()}</Link>
+                    <ul className="mt-3 space-y-2.5">
+                      {(CATEGORIES_BY_GENDER[g.key] || []).map((c) => (
+                        <li key={c.id}><Link to={`/${g.key}/${c.slug}`} aria-label={`${g.label} ${c.name}`} className="text-sm text-[#c9c9cf]">{c.name}</Link></li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                <div className="mt-7">
+                  <p className="font-display text-xl text-lime">COLLECTIONS</p>
                   <ul className="mt-3 space-y-2.5">
-                    {(CATEGORIES_BY_GENDER[g.key] || []).map((c) => (
-                      <li key={c.id}><Link onClick={() => setMenuOpen(false)} to={`/${g.key}/${c.slug}`} className="text-sm text-[#c9c9cf]">{c.name}</Link></li>
+                    {COLLECTIONS.map((c) => (
+                      <li key={c.id}><Link to={`/collection/${c.slug}`} className="text-sm text-[#c9c9cf]">{c.name}</Link></li>
                     ))}
                   </ul>
                 </div>
-              ))}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </header>
   );
 }

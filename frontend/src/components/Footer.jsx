@@ -1,36 +1,34 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Twitter, Youtube, Facebook } from "lucide-react";
 
 const cols = [
   {
     title: "Shop",
     links: [
       ["Men", "/men"],
-      ["T-Shirts", "/men/t-shirts"],
-      ["Hoodies", "/men/hoodies"],
-      ["Joggers", "/men/joggers"],
-      ["Accessories", "/men/accessories"],
+      ["Women", "/women"],
+      ["Kids", "/kids"],
+      ["Sneakers & caps", "/men/accessories"],
+      ["Friday drop", "/drop"],
     ],
   },
   {
     title: "Help",
     links: [
-      ["FAQ", "/help"],
-      ["Shipping", "/help"],
-      ["Returns & Exchange", "/returns"],
-      ["Track Order", "/track"],
-      ["Size Guide", "/help"],
+      ["Shipping", "/help#shipping"],
+      ["Returns & exchanges", "/returns"],
+      ["Size guide", "/help#size"],
+      ["Track order", "/track"],
+      ["Refer a friend", "/help#referral"],
     ],
   },
   {
-    title: "Company",
+    title: "About",
     links: [
-      ["About Us", "/help"],
-      ["Careers", "/help"],
-      ["Privacy Policy", "/help"],
-      ["Terms", "/help"],
-      ["Contact", "/help"],
+      ["FAQ", "/help"],
+      ["Contact", "/help#contact"],
+      ["How this store was built", "https://github.com/prithwirajmukherjee15-cmd/DapperDen-Clothing"],
+      ["Watch the walkthrough", "/walkthrough/"],
     ],
   },
 ];
@@ -48,17 +46,6 @@ export default function Footer() {
               Premium streetwear engineered for the bold. Heavyweight fabric, loud
               graphics, zero compromise.
             </p>
-            <div className="mt-6 flex gap-3">
-              {[Instagram, Twitter, Youtube, Facebook].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="grid h-10 w-10 place-items-center rounded-full border border-[#2a2a30] text-[#8b8b93] transition hover:border-lime hover:text-lime"
-                >
-                  <Icon size={18} />
-                </a>
-              ))}
-            </div>
           </div>
           {cols.map((c) => (
             <div key={c.title}>
@@ -68,9 +55,11 @@ export default function Footer() {
               <ul className="mt-4 space-y-3">
                 {c.links.map(([label, href]) => (
                   <li key={label}>
-                    <Link to={href} className="text-sm text-[#8b8b93] transition hover:text-lime">
-                      {label}
-                    </Link>
+                    {/^https?:|^\/walkthrough/.test(href) ? (
+                      <a href={href} className="text-sm text-[#8b8b93] transition hover:text-lime" {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>{label}</a>
+                    ) : (
+                      <Link to={href} className="text-sm text-[#8b8b93] transition hover:text-lime">{label}</Link>
+                    )}
                   </li>
                 ))}
               </ul>

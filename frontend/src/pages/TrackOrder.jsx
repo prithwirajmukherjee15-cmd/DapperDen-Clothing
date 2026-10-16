@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { PackageSearch, Truck, CheckCircle2, MapPin, Loader2, Package, Download } from "lucide-react";
 import api, { receiptUrl } from "../api";
 import { formatINR } from "../mock/mock";
+import { colourLabel } from "../lib/store";
 
 const STAGES = ["Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered"];
 
@@ -24,7 +25,10 @@ export default function TrackOrder() {
       const res = await api.get("/orders/track", { params: { order_id: orderId.trim(), phone: phone.trim() } });
       setOrder(res.data);
     } catch (e2) {
-      setErr(e2?.response?.data?.detail || "Could not find that order. Check your details.");
+      const notFound = e2?.response?.status === 404;
+      setErr(notFound
+        ? "We couldn't find that order. Order IDs look like DD1234567890 and are in your confirmation email; use the phone number you ordered with."
+        : e2?.response?.data?.detail || "Could not look up that order. Please try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +103,7 @@ export default function TrackOrder() {
                   <img src={it.image} alt="" className="h-16 w-14 rounded-lg object-cover" />
                   <div className="flex-1">
                     <p className="font-grotesk font-medium text-white">{it.name}</p>
-                    <p className="text-sm text-[#8b8b93]">Size {it.size} • {it.color} • Qty {it.qty}</p>
+                    <p className="text-sm text-[#8b8b93]">Size {it.size}{colourLabel(it.color) ? ` • ${colourLabel(it.color)}` : ""} • Qty {it.qty}</p>
                   </div>
                   <span className="font-grotesk font-semibold text-white">{formatINR(it.price * it.qty)}</span>
                 </div>

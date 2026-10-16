@@ -71,9 +71,34 @@ COLLECTIONS = [
 _SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
 _OS = ["One Size"]
 _SHOE = ["UK6", "UK7", "UK8", "UK9", "UK10", "UK11"]
-_DESC = ("Premium heavyweight build with a relaxed streetwear fit. Durable prints "
-         "that don't crack, reinforced seams, and a boxy silhouette engineered for "
-         "everyday flex. Available in multiple colourways.")
+_DESCRIPTIONS = {
+    "t-shirts": "240 GSM heavyweight cotton in a regular fit. Screen-printed graphics that don't crack, "
+                "a ribbed crew neck that keeps its shape, and taped shoulder seams.",
+    "oversized": "240 GSM heavyweight cotton cut oversized, with dropped shoulders and a boxy body. "
+                 "Screen-printed graphics that don't crack, and a ribbed neck that keeps its shape.",
+    "hoodies": "Brushed-back fleece with a relaxed fit and room to layer. Double-lined hood, kangaroo "
+               "pocket, ribbed cuffs and hem, and a print made to survive the wash.",
+    "joggers": "Midweight fleece with a tapered leg, elastic waist and drawcord. Deep side pockets, a "
+               "back pocket and ribbed cuffs that sit clean over sneakers.",
+    "shirts": "Breathable woven fabric in a relaxed camp-collar fit, made for warm days. All-over print "
+              "and a straight hem to wear untucked.",
+    "dresses": "Soft, breathable fabric in a relaxed cut that moves with you. Easy to dress up or down; "
+               "machine washable.",
+    "sneakers": "Breathable knit upper, cushioned midsole and a grippy rubber outsole. Light enough for all "
+                "day; true to size in UK sizing.",
+    "accessories": "Built to go with every fit. Solid materials and clean finishing, in the Dapper Den "
+                   "streetwear style.",
+    "kids": "Soft, breathable cotton that's gentle on skin, with prints made to survive lots of washes. "
+            "Sized by age, with a comfortable regular fit.",
+}
+
+
+def _describe(category, sizes, gender):
+    if gender == "kids":
+        return _DESCRIPTIONS["kids"]
+    if sizes == _SHOE:
+        return _DESCRIPTIONS["sneakers"]
+    return _DESCRIPTIONS.get(category, _DESCRIPTIONS["accessories"])
 
 
 def _mk(pid, name, category, collection, price, mrp, imgs, badge, rating, reviews, sizes, gender="men"):
@@ -82,7 +107,8 @@ def _mk(pid, name, category, collection, price, mrp, imgs, badge, rating, review
         "collection": collection, "price": price, "mrp": mrp,
         "discount": round((mrp - price) / mrp * 100),
         "images": imgs, "sizes": sizes,
-        "rating": rating, "reviews": reviews, "badge": badge, "description": _DESC,
+        "rating": rating, "reviews": reviews, "badge": badge,
+        "description": _describe(category, sizes, gender),
     }
 
 

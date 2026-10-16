@@ -31,14 +31,16 @@ function CategoryStrip() {
   return (
     <section className="mx-auto max-w-7xl px-5 py-20">
       <Reveal>
-        <div className="mb-10 flex items-end justify-between">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="font-grotesk text-sm uppercase tracking-[0.3em] text-lime">Find your fit</span>
             <h2 className="mt-2 font-display text-5xl text-white sm:text-6xl">SHOP BY CATEGORY</h2>
           </div>
-          <Link to="/men" className="dd-hover hidden items-center gap-1 font-grotesk text-sm text-lime hover:underline sm:flex">
-            View all <ArrowUpRight size={16} />
-          </Link>
+          <div className="flex gap-2" data-testid="home-gender-chips">
+            {[["Men", "/men"], ["Women", "/women"], ["Kids", "/kids"]].map(([l, to]) => (
+              <Link key={to} to={to} className="dd-hover rounded-full border border-[#2a2a30] px-4 py-1.5 font-grotesk text-sm text-white transition hover:border-lime hover:text-lime">{l}</Link>
+            ))}
+          </div>
         </div>
       </Reveal>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">

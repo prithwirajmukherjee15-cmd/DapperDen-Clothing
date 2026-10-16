@@ -4,6 +4,7 @@ new-order alert for the store owner. Everything a customer typed is escaped.
 All HTML is table-based with inline styles so it renders in Gmail, Outlook and
 Apple Mail. The same receipt markup is served as a printable web page."""
 import html
+import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlencode
 
@@ -31,6 +32,12 @@ STATUS_COPY = {
     "Cancelled": ("ORDER CANCELLED", "your order has been cancelled. If you paid online, the refund will reach you in 5–7 business days."),
 }
 
+
+
+def colour_label(item):
+    """Real colour names only; older orders stored gallery positions like "Colour 1"."""
+    c = (item.get("color") or "").strip()
+    return "" if re.fullmatch(r"Colour \d+", c, flags=re.I) else c
 
 def e(v) -> str:
     return html.escape(str(v if v is not None else ""), quote=True)
@@ -107,7 +114,7 @@ def _items(order: dict) -> str:
           </td>
           <td valign='top' style='padding:14px 12px;border-bottom:1px solid {LINE};font-family:{BODY};'>
             <div style='font-size:14px;font-weight:bold;color:{TEXT};'>{e(i.get("name", ""))}</div>
-            <div style='font-size:12px;color:{MUTED};margin-top:4px;'>Size {e(i.get("size", ""))} &middot; {e(i.get("color", ""))}</div>
+            <div style='font-size:12px;color:{MUTED};margin-top:4px;'>Size {e(i.get("size", ""))}{(" &middot; " + e(colour_label(i))) if colour_label(i) else ""}</div>
             <div style='font-size:12px;color:{MUTED};margin-top:2px;'>{e(qty)} &times; {inr(i.get("price", 0))}</div>
           </td>
           <td align='right' valign='top' style='padding:14px 0;border-bottom:1px solid {LINE};font-family:{BODY};font-size:14px;font-weight:bold;color:{TEXT};white-space:nowrap;'>{inr(i.get("price", 0) * qty)}</td>
@@ -237,7 +244,8 @@ def receipt_text(order: dict, site_url: str) -> str:
              f"Track it: {track_url(site_url, order)}", "", f"Order date: {order_date(order)}",
              f"Payment: {order.get('payment_method', '')}", ""]
     for i in order.get("items", []):
-        lines.append(f"- {i.get('name')} (Size {i.get('size')}, {i.get('color')}) x{i.get('qty')}  {inr(i.get('price', 0) * i.get('qty', 1))}")
+        detail = ", ".join(x for x in (f"Size {i.get('size')}", colour_label(i)) if x)
+        lines.append(f"- {i.get('name')} ({detail}) x{i.get('qty')}  {inr(i.get('price', 0) * i.get('qty', 1))}")
     lines += ["", f"Subtotal: {inr(order.get('subtotal', 0))}"]
     if order.get("discount"):
         lines.append(f"Coupon ({order.get('coupon')}): -{inr(order['discount'])}")

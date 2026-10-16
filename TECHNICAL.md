@@ -19,6 +19,7 @@ Product photos are Unsplash and Pexels stock. Photos that showed other brands' l
 frontend/src/
   pages/         Home, CategoryHub, PLP, PDP, Cart, Checkout, Search, TrackOrder, Wishlist, Help
   components/    Navbar (search suggestions), PaymentGateway (sandbox), ProductCard, VideoHero, ...
+  lib/           search.js (word-by-word search with synonyms and price caps), store.js (shipping rules)
   context/       DataContext (catalogue), CartContext (bag + wishlist in localStorage)
 backend/
   server.py      API routes, order pricing, email sending
@@ -97,6 +98,13 @@ The 28 offline tests run against a fake database, so they need no MongoDB. They 
 - email escaping and content (receipt, COD wording, owner alert)
 - the admin endpoints and the health check
 - the bundled catalogue matching the API's, and no product photo being reused
+
+The storefront has unit tests for search (`frontend/src/lib/search.test.js`):
+
+```bash
+cd frontend
+CI=true yarn test --watchAll=false
+```
 
 `tests/test_backend_regression.py` runs against a live deployment. Instructions are at the top of the file; note that it creates a real test order.
 

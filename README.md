@@ -28,8 +28,8 @@ Dapper Den is that store rebuilt: a working shop that answers each buyer doubt b
 |---|---|
 | **The problem** | Shoppers left a real streetwear store between landing and ordering, because their doubts (shipping, COD, fit, returns) were answered too late or not at all. |
 | **What I did** | Audited the journey, rebuilt the store around one idea (answer the doubt where it comes up), planned a ₹1 lakh launch campaign, and built the retention flows into the store. |
-| **Skills** | CRO audit · messaging · merchandising · pricing and promotions · campaign planning · referral and lifecycle email · attribution · brand and content · measurement planning |
-| **See it** | [Live store](https://dapper-denn.netlify.app) · [4-minute walkthrough](https://dapper-denn.netlify.app/walkthrough/) · [One-page case study (PDF)](docs/case-study.pdf) · [Launch campaign](docs/marketing/launch-campaign.md) |
+| **Skills** | CRO audit · usability testing · messaging · merchandising · pricing and promotions · campaign planning · referral and lifecycle email · attribution · brand and content · measurement planning |
+| **See it** | [Live store](https://dapper-denn.netlify.app) · [4-minute walkthrough](https://dapper-denn.netlify.app/walkthrough/) · [One-page case study (PDF)](docs/case-study.pdf) · [Launch campaign](docs/marketing/launch-campaign.md) · [Usability walkthroughs](docs/research/usability-test.md) |
 
 ## The problem I saw
 
@@ -124,6 +124,7 @@ I keep first-hand findings separate from guesses.
 | The friction points above came from auditing a real store's visit-to-order journey. | How much each friction point actually costs in lost orders. That needs the original store's analytics. |
 | The rebuilt journey works end to end on the live site: orders are saved, priced on the server, emailed and trackable. | Whether conversion actually improves. That needs an A/B test with real traffic. |
 | Every promise (free shipping over ₹1,499, COD, 15-day returns) appears at the moment the shopper needs it. | Whether the size guide measurably reduces size-related returns. |
+| Six automated persona walkthroughs on the live store (simulated shoppers driving a real browser on six devices) found 28 issues, including a phone menu that didn't open. 26 are fixed. [Read the report](docs/research/usability-test.md). | How real shoppers behave. The walkthroughs were simulated, so a five-person test with real shoppers is next. |
 | | The right free-shipping threshold and coupon levels for margin. |
 | | Whether shoppers browse more by fandom collection or by garment type. |
 
@@ -150,6 +151,7 @@ I built the working store with AI coding tools, directing them from the audit ra
 | **Post-purchase trust and retention** | Order tracking without an account, a printable receipt, a wishlist, and a "true to size" score built from real buyers' answers |
 | **Attribution** | UTM conventions per channel; the drop page records the source of every sign-up |
 | **Brand identity** | Logo, dark-and-lime palette, Anton headlines and a confident streetwear voice, carried from the site into every email |
+| **Usability testing** | [Persona walkthroughs on the live store](docs/research/usability-test.md) across phones, slow 3G and keyboard-only browsing: 28 issues traced to their cause, 26 fixed |
 | **Measurement planning** | A funnel metric for each change, so every fix can be tested, not assumed |
 | **Video storytelling** | A [narrated walkthrough](https://dapper-denn.netlify.app/walkthrough/) with chapters ([chapter list](WALKTHROUGH.md)), plus 30-second cuts for portfolio pages and LinkedIn |
 
@@ -164,6 +166,6 @@ React 19, Tailwind and Framer Motion on Netlify; a FastAPI API with MongoDB Atla
 - **Orders are priced on the server.** The browser only sends what was picked, so a tampered cart can't change the price.
 - **Checkout never fakes a success.** A failed order shows an error and keeps the bag; *Order confirmed* only appears once the order is saved.
 - **Emails go out after the order is saved**, so a slow mail provider never delays checkout. All customer input is escaped.
-- 28 offline API tests cover pricing, coupons, referrals, bag reminders, fit feedback, the drop list, tracking, receipts, emails, the admin endpoints and catalogue consistency.
+- 28 offline API tests cover pricing, coupons, referrals, bag reminders, fit feedback, the drop list, tracking, receipts, emails, the admin endpoints and catalogue consistency. Frontend unit tests cover search.
 
 Architecture, API, setup, tests and deployment are in **[TECHNICAL.md](TECHNICAL.md)**.
