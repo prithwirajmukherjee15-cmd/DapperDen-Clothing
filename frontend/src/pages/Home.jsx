@@ -9,6 +9,7 @@ import Reveal from "../components/Reveal";
 import TiltCard from "../components/TiltCard";
 import VideoHero from "../components/VideoHero";
 import GlobalLookbook from "../components/GlobalLookbook";
+import ReelsStrip from "../components/ReelsStrip";
 
 function BigMarquee() {
   const row = ["HEAVYWEIGHT", "•", "BOLD GRAPHICS", "•", "LIMITED DROPS", "•", "WORN LOUD", "•"];
@@ -202,6 +203,7 @@ export default function Home() {
       <BigMarquee />
       <CategoryStrip />
       <CollectionsRail />
+      <ReelsStrip />
       <GlobalLookbook />
       <FeaturedGrid />
       <Stats />

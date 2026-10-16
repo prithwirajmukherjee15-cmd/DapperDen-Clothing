@@ -67,6 +67,8 @@ The rebuild fixed what happens once a shopper arrives. The next job is getting t
 
 **The Friday Drop.** A launch campaign for the Anime Legends collection, built around a weekly ritual (*Drops Friday, 8 PM*) and an owned audience rather than one-off clicks. The plan covers the audience and insight, message pillars, offers, channel mix with creator seeding, a two-week calendar, a ₹1 lakh budget with funnel maths and an honest payback analysis, KPIs, tests and risks. The [drop page](https://dapper-denn.netlify.app/drop) is live: a countdown, a collection preview, and an email/WhatsApp sign-up with consent that records which channel each sign-up came from.
 
+**Brand reels.** Four 20-second reels (*Drops Friday*, *Will it fit?*, *Pay your way* and *Give ₹200, get ₹200*) play on the homepage and are ready for Instagram and Facebook. They're cut to an original beat composed for the brand. [About the reels →](docs/marketing/reels.md)
+
 **Retention flows, built into the store:**
 
 | Flow | What it does |
@@ -132,7 +134,7 @@ I built the working store with AI coding tools, directing them from the audit ra
 | **Cross-sell and basket building** | *Complete the look* in the bag, plus the free-shipping threshold at ₹1,499 as an order-value nudge |
 | **Pricing and promotions** | A coupon ladder: DAPPER10 (10% off), STREET20 (20% off) and FLAT300 (₹300 off over ₹1,499), validated on the server; no-cost EMI from ₹3,000; a ₹50 prepaid nudge to cut cash-on-delivery risk |
 | **Campaign planning** | [The Friday Drop](docs/marketing/launch-campaign.md): audience insight, message pillars, offers, channel mix, creator seeding, calendar, budget with funnel maths and payback, KPIs and tests |
-| **Content and creative** | Three launch creatives (a feed post, a countdown story, a referral post), and a [drop landing page](https://dapper-denn.netlify.app/drop) with a live countdown |
+| **Content and creative** | Three launch creatives (a feed post, a countdown story, a referral post), a [drop landing page](https://dapper-denn.netlify.app/drop) with a live countdown, and [four brand reels](docs/marketing/reels.md) on the homepage, edited to an original soundtrack |
 | **Referral marketing** | Give ₹200, get ₹200: a code on every order, WhatsApp sharing, automatic ₹200 rewards, first-order and self-use rules |
 | **Checkout optimisation for India** | 3-step guest checkout, UPI first, then cards, EMI, netbanking, wallets and COD; Indian cities and states, prices in ₹ inclusive of taxes |
 | **Lifecycle and CRM email** | A branded receipt, shipping updates at each stage, a one-time bag reminder, the referral reward, a post-delivery fit question, drop-list confirmation, and a new-order alert for the store owner |
