@@ -14,7 +14,7 @@ function BigMarquee() {
   const row = ["HEAVYWEIGHT", "•", "BOLD GRAPHICS", "•", "LIMITED DROPS", "•", "WORN LOUD", "•"];
   const items = [...row, ...row];
   return (
-    <div className="border-y border-[#2a2a30] bg-[#0a0a0b] py-6">
+    <div className="overflow-hidden border-y border-[#2a2a30] bg-[#0a0a0b] py-6">
       <div className="flex w-max animate-marquee gap-6">
         {items.map((t, i) => (
           <span key={i} className={`font-display text-4xl uppercase tracking-tight sm:text-6xl ${t === "•" ? "text-lime" : "text-white/90"}`}>
