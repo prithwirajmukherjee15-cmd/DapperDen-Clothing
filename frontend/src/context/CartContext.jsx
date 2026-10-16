@@ -56,6 +56,9 @@ export function CartProvider({ children }) {
       prev.map((i) => (i.key === key ? { ...i, qty: Math.max(1, qty) } : i))
     );
   const clearCart = () => setItems([]);
+  // Refill the bag from a saved checkout (the "complete your order" email link).
+  const replaceCart = (lines) =>
+    setItems(lines.map((l) => ({ key: lineKey(l.id, l.size, l.color), ...l })));
 
   const toggleWishlist = (productId) =>
     setWishlist((prev) =>
@@ -76,6 +79,7 @@ export function CartProvider({ children }) {
         removeFromCart,
         updateQty,
         clearCart,
+        replaceCart,
         toggleWishlist,
         inWishlist,
         count,

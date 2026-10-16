@@ -20,6 +20,7 @@ from catalog import CATEGORIES, COLLECTIONS, PRODUCTS, COUPONS, CATEGORIES_BY_GE
 PRODUCTS_BY_ID = {p["id"]: p for p in PRODUCTS}
 FREE_SHIPPING_MIN = 1499
 SHIPPING_FEE = 99
+PREPAID_DISCOUNT = 50  # nudge shoppers from cash on delivery to UPI/cards
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -72,6 +73,7 @@ class OrderCreate(BaseModel):
     coupon: Optional[str] = None
     payment_method: str = Field(min_length=1, max_length=60)
     address: Address
+    checkout_id: Optional[str] = Field(default=None, max_length=40)
 
 
 class CouponRequest(BaseModel):
@@ -115,6 +117,7 @@ async def send_order_emails(order: dict):
     method = "COD" if emails.is_cod(order) else order.get("payment_method", "")
     await send_email(ORDER_NOTIFY_EMAIL, f"New order #{oid} — {total} ({method})",
                      emails.owner_alert_html(order, SITE_URL), tag="owner-alert")
+    await growth.after_order(order)
 
 
 # ---------- Catalog routes ----------
@@ -156,20 +159,25 @@ async def search(q: str = ""):
     return [p for p in PRODUCTS if s in p["name"].lower() or s in p["category"].lower() or s in p["collection"].replace("-", " ").lower()]
 
 
-def apply_coupon(code: str, subtotal: float) -> dict:
+def _discount(c: dict, code: str, subtotal: float) -> dict:
+    if c.get("min") and subtotal < c["min"]:
+        return {"valid": False, "message": f"Add items worth {emails.inr(c['min'])} or more to use {code}"}
+    discount = round(subtotal * c["value"] / 100) if c["type"] == "percent" else c["value"]
+    return {"valid": True, "code": code, "label": c["label"], "discount": min(discount, subtotal), "kind": c.get("kind", "promo")}
+
+
+async def apply_coupon(code: str, subtotal: float) -> dict:
+    """Store-wide promo codes, then one-time reward codes, then a friend's referral code."""
     code = (code or "").strip().upper()
-    c = COUPONS.get(code)
+    c = COUPONS.get(code) or await growth.find_code(code)
     if not c:
         return {"valid": False, "message": "Invalid coupon code"}
-    if c.get("min") and subtotal < c["min"]:
-        return {"valid": False, "message": f"Add items worth more to use {code}"}
-    discount = round(subtotal * c["value"] / 100) if c["type"] == "percent" else c["value"]
-    return {"valid": True, "code": code, "label": c["label"], "discount": min(discount, subtotal)}
+    return _discount(c, code, subtotal)
 
 
 @api_router.post("/coupon/validate")
 async def validate_coupon(payload: CouponRequest):
-    return apply_coupon(payload.code, payload.subtotal)
+    return await apply_coupon(payload.code, payload.subtotal)
 
 
 # ---------- Orders (guest) ----------
@@ -196,48 +204,63 @@ def _price_items(items: List[OrderItem]) -> List[dict]:
 async def create_order(payload: OrderCreate, background: BackgroundTasks):
     items = _price_items(payload.items)
     subtotal = sum(i["price"] * i["qty"] for i in items)
+    address = payload.address.model_dump()
     discount = 0
     coupon = None
+    coupon_kind = None
     if payload.coupon:
-        c = apply_coupon(payload.coupon, subtotal)
+        c = await apply_coupon(payload.coupon, subtotal)
         if not c["valid"]:
             raise HTTPException(status_code=400, detail=f"Coupon {payload.coupon.upper()} can't be applied: {c['message']}")
-        discount, coupon = c["discount"], c["code"]
+        discount, coupon, coupon_kind = c["discount"], c["code"], c["kind"]
+        if coupon_kind == "referral":
+            await growth.check_referral_use(coupon, address["phone"])
+    is_cod = emails.is_cod({"payment_method": payload.payment_method})
+    prepaid_discount = 0 if is_cod else min(PREPAID_DISCOUNT, max(0, subtotal - discount))
     shipping = 0 if subtotal >= FREE_SHIPPING_MIN else SHIPPING_FEE
-    total = max(0, subtotal - discount) + shipping
+    total = max(0, subtotal - discount - prepaid_discount) + shipping
 
     doc = {
         "items": items,
         "total": total,
         "subtotal": subtotal,
         "discount": discount,
+        "prepaid_discount": prepaid_discount,
         "shipping": shipping,
         "coupon": coupon,
+        "coupon_kind": coupon_kind,
         "payment_method": payload.payment_method,
-        "address": payload.address.model_dump(),
+        "address": address,
         "status": "Confirmed",
+        "feedback_token": secrets.token_urlsafe(9),
         "created_at": datetime.now(timezone.utc),
     }
+    if coupon_kind == "reward" and not await growth.claim_reward(coupon):
+        raise HTTPException(status_code=400, detail=f"Coupon {coupon} has already been used")
     for _ in range(5):
         doc["order_id"] = _new_order_id()
+        doc["referral_code"] = growth.new_referral_code(address["name"])
         try:
             await db.orders.insert_one(doc)
             break
         except DuplicateKeyError:
             doc.pop("_id", None)
     else:
+        if coupon_kind == "reward":
+            await growth.release_reward(coupon)
         raise HTTPException(status_code=503, detail="Could not allocate an order ID, please retry")
     doc.pop("_id", None)
+    await growth.mark_checkout_converted(payload.checkout_id, address["phone"], doc["order_id"])
 
     doc["created_at"] = doc["created_at"].isoformat()
     # Emails go out after the response so a slow mail provider never delays checkout.
     background.add_task(send_order_emails, dict(doc))
-    return doc
+    return {k: v for k, v in doc.items() if k != "feedback_token"}
 
 
 async def _find_order_for_customer(order_id: str, phone: str) -> dict:
     oid = order_id.strip().upper()
-    order = await db.orders.find_one({"order_id": oid}, {"_id": 0})
+    order = await db.orders.find_one({"order_id": oid}, {"_id": 0, "feedback_token": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     saved_phone = str((order.get("address") or {}).get("phone", ""))
@@ -302,9 +325,10 @@ async def update_order_status(order_id: str, payload: StatusUpdate, background: 
     changed = order.get("status") != payload.status
     order["status"] = payload.status
     if payload.notify and changed:
+        feedback_url = growth.feedback_url(order) if payload.status == "Delivered" else None
         background.add_task(
             send_email, (order.get("address") or {}).get("email"),
-            f"Order #{oid}: {payload.status}", emails.status_html(order, SITE_URL, SUPPORT_EMAIL), tag="status")
+            f"Order #{oid}: {payload.status}", emails.status_html(order, SITE_URL, SUPPORT_EMAIL, feedback_url), tag="status")
     return {"order_id": oid, "status": payload.status}
 
 
@@ -329,6 +353,17 @@ async def root():
     return {"message": "Dapper Den API"}
 
 
+import growth  # noqa: E402  (needs the helpers above)
+
+
+async def _send_email_late_bound(*args, **kwargs):
+    # Looked up at call time so tests can swap send_email out.
+    await send_email(*args, **kwargs)
+
+
+growth.init(get_db=lambda: db, send_email=_send_email_late_bound, require_admin=_require_admin,
+            price_items=_price_items, site_url=SITE_URL, support_email=SUPPORT_EMAIL)
+api_router.include_router(growth.router)
 app.include_router(api_router)
 
 app.add_middleware(
@@ -344,8 +379,9 @@ app.add_middleware(
 async def ensure_indexes():
     try:
         await db.orders.create_index("order_id", unique=True)
+        await growth.ensure_indexes()
     except Exception as e:
-        logger.error("Could not create orders.order_id index: %s", e)
+        logger.error("Could not create database indexes: %s", e)
 
 
 @app.on_event("shutdown")

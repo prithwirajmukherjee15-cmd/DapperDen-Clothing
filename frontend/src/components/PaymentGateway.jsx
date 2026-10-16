@@ -70,8 +70,10 @@ const CardBrandIcon = ({ brand }) => {
 
 // onSuccess(label) places the order and must reject if it fails; onComplete runs
 // after the success animation.
-export default function PaymentGateway({ amount, onSuccess, onComplete, onBack }) {
+export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onSuccess, onComplete, onBack }) {
   const [method, setMethod] = useState("upi");
+  // Paying online (anything but cash on delivery) takes prepaidOff off the total; the server applies the same rule.
+  const amount = method === "cod" ? baseAmount : Math.max(0, baseAmount - prepaidOff);
   const [processing, setProcessing] = useState(null); // {label, phase}
   const [err, setErr] = useState("");
 
@@ -133,6 +135,7 @@ export default function PaymentGateway({ amount, onSuccess, onComplete, onBack }
         <div className="text-right">
           <p className="text-[11px] text-white/70">Amount payable</p>
           <p className="text-lg font-bold" data-testid="gateway-amount">{formatINR(amount)}</p>
+          {prepaidOff > 0 && method !== "cod" && <p className="text-[11px] font-semibold text-emerald-300">₹{prepaidOff} off for paying online</p>}
         </div>
       </div>
 
@@ -158,6 +161,18 @@ export default function PaymentGateway({ amount, onSuccess, onComplete, onBack }
 
         {/* Form area */}
         <div className="min-h-[340px] p-5">
+          {prepaidOff > 0 && (
+            method === "cod" ? (
+              <button onClick={() => { setMethod("upi"); setErr(""); }} data-testid="prepaid-nudge"
+                className="mb-4 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-left text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                Pay online instead and save ₹{prepaidOff}. UPI takes 10 seconds →
+              </button>
+            ) : (
+              <p className="mb-4 rounded-lg bg-emerald-50 p-3 text-xs font-medium text-emerald-700" data-testid="prepaid-saving">
+                You're saving ₹{prepaidOff} by paying online.
+              </p>
+            )
+          )}
           <AnimatePresence mode="wait">
             <motion.div key={method} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {method === "card" && (

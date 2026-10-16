@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag, Gift } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "../mock/mock";
 import { useData } from "../context/DataContext";
@@ -10,15 +10,37 @@ import ProductCard from "../components/ProductCard";
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, updateQty, removeFromCart, subtotal, mrpTotal } = useCart();
+  const { items, updateQty, removeFromCart, subtotal, mrpTotal, replaceCart } = useCart();
   const { products } = useData();
+  const [params, setParams] = useSearchParams();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState(null);
   const [msg, setMsg] = useState("");
+  const [notice, setNotice] = useState("");
+  const referral = (() => { try { return localStorage.getItem("dd_ref") || ""; } catch { return ""; } })();
 
-  const applyCoupon = async () => {
+  // "Complete your order" links from the bag-reminder email refill the bag.
+  useEffect(() => {
+    const id = params.get("restore");
+    if (!id) return;
+    api.get(`/checkouts/${encodeURIComponent(id)}`)
+      .then((res) => { replaceCart(res.data.items); setNotice("Welcome back. We've saved your bag just as you left it."); })
+      .catch(() => setNotice("That bag link has expired, but everything is still in stock."))
+      .finally(() => setParams({}, { replace: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A friend's referral link (?ref=CODE) is remembered and applied here automatically.
+  useEffect(() => {
+    if (referral && !applied && subtotal >= 999) applyCoupon(referral);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referral, subtotal]);
+
+  const applyCoupon = async (override) => {
+    const value = typeof override === "string" ? override : code.trim();
+    if (typeof override === "string") setCode(override);
     try {
-      const res = await api.post("/coupon/validate", { code: code.trim(), subtotal });
+      const res = await api.post("/coupon/validate", { code: value, subtotal });
       if (!res.data.valid) { setMsg(res.data.message || "Invalid coupon"); setApplied(null); return; }
       setApplied({ code: res.data.code, label: res.data.label, discount: res.data.discount });
       setMsg("");
@@ -47,6 +69,7 @@ export default function Cart() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10">
+      {notice && <p className="mb-4 rounded-xl border border-lime/40 bg-lime/10 px-4 py-3 text-sm text-lime" data-testid="restore-notice">{notice}</p>}
       <h1 className="font-display text-5xl text-white">YOUR BAG <span className="text-lime">({items.length})</span></h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
         {/* Items */}
@@ -95,6 +118,9 @@ export default function Cart() {
           {msg && <p className="mt-2 text-xs text-magenta">{msg}</p>}
           {applied && <p className="mt-2 text-xs text-lime">Applied {applied.code} — {applied.label}</p>}
           <p className="mt-2 text-xs text-[#8b8b93]">Try: DAPPER10, STREET20, FLAT300</p>
+          {referral && !applied && subtotal < 999 && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-lime"><Gift size={13} /> Your friend's code {referral} gives ₹200 off orders above ₹999.</p>
+          )}
 
           <div className="mt-5 space-y-3 border-t border-[#2a2a30] pt-5 text-sm">
             <Row l="Subtotal (MRP)" v={formatINR(mrpTotal)} muted />
@@ -106,6 +132,7 @@ export default function Cart() {
             <span className="font-grotesk text-lg font-semibold text-white">Total</span>
             <span className="font-display text-2xl text-white">{formatINR(total)}</span>
           </div>
+          <p className="mt-2 text-right text-xs text-lime" data-testid="prepaid-hint">Pay online at checkout and save ₹50 more</p>
           <button onClick={() => navigate("/checkout", { state: { total, discount, shipping, subtotal, coupon: applied?.code || null } })}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition hover:bg-lime-dim">
             Proceed to Checkout <ArrowRight size={18} />

@@ -292,4 +292,5 @@ COUPONS = {
     "DAPPER10": {"type": "percent", "value": 10, "label": "10% off"},
     "FLAT300": {"type": "flat", "value": 300, "label": "₹300 off orders above ₹1499", "min": 1499},
     "STREET20": {"type": "percent", "value": 20, "label": "20% off"},
+    "EARLYDROP": {"type": "percent", "value": 15, "label": "15% off for the drop list (orders above ₹1499)", "min": 1499},
 }

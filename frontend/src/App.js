@@ -20,12 +20,19 @@ import Search from "./pages/Search";
 import Help from "./pages/Help";
 import TrackOrder from "./pages/TrackOrder";
 import Wishlist from "./pages/Wishlist";
+import Drop from "./pages/Drop";
+import Feedback from "./pages/Feedback";
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
+  // Remember a friend's referral code from a shared link (?ref=CODE); the bag applies it.
+  useEffect(() => {
+    const ref = new URLSearchParams(search).get("ref");
+    if (ref) { try { localStorage.setItem("dd_ref", ref.trim().toUpperCase().slice(0, 20)); } catch { /* storage blocked */ } }
+  }, [search]);
   return null;
 }
 
@@ -53,6 +60,8 @@ function AppRoutes() {
           <Route path="/search" element={<Search />} />
           <Route path="/help" element={<Help />} />
           <Route path="/returns" element={<Help />} />
+          <Route path="/drop" element={<Drop />} />
+          <Route path="/feedback" element={<Feedback />} />
         </Routes>
       </main>
       <Footer />

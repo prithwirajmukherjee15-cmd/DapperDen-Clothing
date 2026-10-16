@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Truck, ShieldCheck, PartyPopper, MapPin, Download } from "lucide-react";
+import { Check, Truck, ShieldCheck, PartyPopper, MapPin, Download, Gift, Copy } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import api, { receiptUrl } from "../api";
 import { formatINR } from "../mock/mock";
@@ -9,6 +9,8 @@ import { INDIAN_CITIES, INDIAN_STATES } from "../mock/india";
 import PaymentGateway from "../components/PaymentGateway";
 
 const STEPS = ["Address", "Payment", "Confirmation"];
+const PREPAID_OFF = 50; // same as PREPAID_DISCOUNT on the server
+const SITE = typeof window !== "undefined" ? window.location.origin : "";
 
 export default function Checkout() {
   const { state } = useLocation();
@@ -16,6 +18,17 @@ export default function Checkout() {
   const [step, setStep] = useState(0);
   const [addr, setAddr] = useState({ name: "", phone: "", email: "", pincode: "", line: "", city: "", stateName: "" });
   const [order, setOrder] = useState(null);
+  const [checkoutId, setCheckoutId] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // Save the bag once the address is in, so a reminder can bring the shopper back if they don't finish.
+  const toPayment = () => {
+    setStep(1);
+    api.post("/checkouts", {
+      items: items.map((i) => ({ id: i.id, size: i.size, color: i.color, qty: i.qty })),
+      name: addr.name, phone: addr.phone, email: addr.email || null,
+    }).then((res) => setCheckoutId(res.data.checkout_id)).catch(() => {});
+  };
 
   const total = state?.total ?? subtotal;
 
@@ -28,6 +41,7 @@ export default function Checkout() {
       coupon: state?.coupon ?? null,
       payment_method: label,
       address: addr,
+      checkout_id: checkoutId,
     };
     let res;
     try {
@@ -80,7 +94,7 @@ export default function Checkout() {
               <Field label="Full Name" value={addr.name} onChange={(v) => setAddr({ ...addr, name: v })} testid="addr-name" />
               <Field label="Phone" value={addr.phone} onChange={(v) => setAddr({ ...addr, phone: v.replace(/\D/g, "").slice(0, 10) })} testid="addr-phone" />
               <div className="sm:col-span-2">
-                <Field label="Email (for order confirmation)" value={addr.email} onChange={(v) => setAddr({ ...addr, email: v })} testid="addr-email" />
+                <Field label="Email (for your receipt, and one reminder if you don't finish)" value={addr.email} onChange={(v) => setAddr({ ...addr, email: v })} testid="addr-email" />
               </div>
               <div className="sm:col-span-2">
                 <Field label="Flat / House No, Building, Street, Area" value={addr.line} onChange={(v) => setAddr({ ...addr, line: v })} testid="addr-line" icon={<MapPin size={15} className="text-lime" />} />
@@ -90,7 +104,7 @@ export default function Checkout() {
               <Select label="State / UT" value={addr.stateName} onChange={(v) => setAddr({ ...addr, stateName: v })} options={INDIAN_STATES} placeholder="Select state" testid="addr-state" />
               <Field label="Country" value="India" onChange={() => {}} disabled testid="addr-country" />
             </div>
-            <button disabled={!canProceed} onClick={() => setStep(1)} data-testid="continue-to-payment-btn"
+            <button disabled={!canProceed} onClick={toPayment} data-testid="continue-to-payment-btn"
               className="mt-8 w-full rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition enabled:hover:bg-lime-dim disabled:cursor-not-allowed disabled:opacity-40">
               Continue to Payment
             </button>
@@ -102,7 +116,7 @@ export default function Checkout() {
             <h2 className="flex items-center gap-2 font-display text-3xl text-white"><ShieldCheck size={24} className="text-lime" /> SECURE PAYMENT</h2>
             <p className="mt-1 text-sm text-[#8b8b93]">Delivering to {addr.name}, {addr.city}, {addr.stateName} — {addr.pincode}</p>
             <div className="mt-6">
-              <PaymentGateway amount={total} onSuccess={placeOrder} onComplete={finishOrder} onBack={() => setStep(0)} />
+              <PaymentGateway amount={total} prepaidOff={PREPAID_OFF} onSuccess={placeOrder} onComplete={finishOrder} onBack={() => setStep(0)} />
             </div>
           </motion.div>
         )}
@@ -119,6 +133,7 @@ export default function Checkout() {
               <Line l="Payment" v={order.payment_method} />
               <Line l={`Items (${order.items.reduce((n, i) => n + i.qty, 0)})`} v={formatINR(order.subtotal)} />
               {order.discount > 0 && <Line l={`Coupon (${order.coupon})`} v={"-" + formatINR(order.discount)} />}
+              {order.prepaid_discount > 0 && <Line l="Paid online" v={"-" + formatINR(order.prepaid_discount)} />}
               <Line l="Shipping" v={order.shipping ? formatINR(order.shipping) : "FREE"} />
               <Line l={isCod ? "Due on delivery" : "Amount paid"} v={formatINR(order.total)} />
               <Line l="Ship to" v={`${addr.city}, ${addr.stateName}`} />
@@ -132,8 +147,30 @@ export default function Checkout() {
               <Link to="/track" state={{ orderId: order.order_id, phone: addr.phone }} data-testid="confirm-track-link" className="rounded-full border border-[#2a2a30] px-6 py-3 font-grotesk font-semibold text-white hover:border-lime">Track Order</Link>
               <Link to="/men" className="rounded-full bg-lime px-6 py-3 font-grotesk font-bold text-[#0a0a0b]">Keep Shopping</Link>
             </div>
+            {order.referral_code && <ReferralCard code={order.referral_code} copied={copied} onCopy={() => {
+              navigator.clipboard?.writeText(`${SITE}/?ref=${order.referral_code}`).then(() => setCopied(true)).catch(() => {});
+            }} />}
           </motion.div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ReferralCard({ code, copied, onCopy }) {
+  const link = `${SITE}/?ref=${code}`;
+  const text = `I got my streetwear from Dapper Den. Use my code ${code} for ₹200 off your first order (above ₹999): ${link}`;
+  return (
+    <div className="mx-auto mt-8 max-w-sm rounded-2xl border border-lime/40 bg-lime/5 p-5 text-left" data-testid="referral-card">
+      <p className="flex items-center gap-2 font-grotesk text-xs font-bold uppercase tracking-widest text-lime"><Gift size={14} /> Give ₹200, get ₹200</p>
+      <p className="mt-2 text-sm text-[#c9c9cf]">Your friend gets ₹200 off their first order. When they order, you get a ₹200 code too.</p>
+      <p className="mt-3 font-display text-3xl tracking-widest text-white" data-testid="referral-code">{code}</p>
+      <div className="mt-4 flex gap-2">
+        <a href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noreferrer" data-testid="referral-whatsapp"
+          className="flex-1 rounded-full bg-[#25D366] px-4 py-2.5 text-center font-grotesk text-sm font-bold text-[#0a0a0b]">Share on WhatsApp</a>
+        <button onClick={onCopy} className="inline-flex items-center gap-1.5 rounded-full border border-[#2a2a30] px-4 py-2.5 font-grotesk text-sm font-semibold text-white hover:border-lime">
+          <Copy size={14} /> {copied ? "Copied" : "Copy link"}
+        </button>
       </div>
     </div>
   );

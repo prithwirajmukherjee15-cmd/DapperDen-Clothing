@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Heart, ShoppingBag, Truck, RotateCcw, ShieldCheck, ChevronRight, Ruler, Minus, Plus, X, Check } from "lucide-react";
@@ -8,6 +8,7 @@ import { useCart } from "../context/CartContext";
 import ProductCard from "../components/ProductCard";
 import Reveal from "../components/Reveal";
 import { useToast } from "../hooks/use-toast";
+import api from "../api";
 
 export default function PDP() {
   const { slug } = useParams();
@@ -22,6 +23,13 @@ export default function PDP() {
   const [qty, setQty] = useState(1);
   const [sizeGuide, setSizeGuide] = useState(false);
   const [err, setErr] = useState(false);
+  const [fit, setFit] = useState(null);
+
+  // Fit score from post-delivery feedback ("How did it fit?"); shown once enough buyers have answered.
+  useEffect(() => {
+    setFit(null);
+    api.get(`/products/${slug}/fit`).then((r) => setFit(r.data.enough ? r.data : null)).catch(() => {});
+  }, [slug]);
 
   if (!product) {
     return (
@@ -127,6 +135,12 @@ export default function PDP() {
               ))}
             </div>
             {err && <p className="mt-2 text-sm text-magenta">Please select a size to continue.</p>}
+            {fit && (
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-[#c9c9cf]" data-testid="fit-score">
+                <Ruler size={14} className="text-lime" />
+                <span><b className="text-white">{fit.true_to_size}% say true to size</b> · {fit.runs_small}% small · {fit.runs_large}% big <span className="text-[#8b8b93]">({fit.responses} buyers)</span></span>
+              </p>
+            )}
           </div>
 
           {/* Qty */}

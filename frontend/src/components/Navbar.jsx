@@ -185,6 +185,10 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link to="/drop" data-testid="nav-drop"
+            className="hidden rounded-full border border-lime/60 px-3 py-1 font-grotesk text-xs font-bold uppercase tracking-wider text-lime transition hover:bg-lime hover:text-[#0a0a0b] md:inline-block">
+            Friday drop
+          </Link>
           <motion.div whileTap={{ scale: 0.8 }} className="relative hidden sm:block">
             <Link to="/track" className="text-white transition hover:text-lime" aria-label="track order" data-testid="nav-track-order">
               <PackageSearch size={20} />

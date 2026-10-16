@@ -5,7 +5,7 @@ All HTML is table-based with inline styles so it renders in Gmail, Outlook and
 Apple Mail. The same receipt markup is served as a printable web page."""
 import html
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -126,6 +126,8 @@ def _totals(order: dict) -> str:
     rows = [_row("Subtotal", inr(order.get("subtotal", 0)))]
     if order.get("discount"):
         rows.append(_row(f"Coupon ({e(order.get('coupon') or '')})", "&minus;" + inr(order["discount"]), color=LIME))
+    if order.get("prepaid_discount"):
+        rows.append(_row("Paid online", "&minus;" + inr(order["prepaid_discount"]), color=LIME))
     shipping = order.get("shipping", 0)
     rows.append(_row("Shipping", "FREE" if not shipping else inr(shipping), color=LIME if not shipping else SOFT))
     total_label = "Amount due on delivery" if is_cod(order) else "Total paid"
@@ -156,7 +158,7 @@ def _address(order: dict) -> str:
             f"{e(a.get('city'))}, {e(a.get('stateName'))} &ndash; {e(a.get('pincode'))}<br/>Phone: {e(a.get('phone'))}</div>")
 
 
-def _shell(inner: str, preheader: str, site_url: str, support_email: str = "") -> str:
+def _shell(inner: str, preheader: str, site_url: str, support_email: str = "", reason: str = "you placed an order at") -> str:
     support = (f" or write to <a href='mailto:{e(support_email)}' style='color:{LIME};text-decoration:none;'>{e(support_email)}</a>"
                if support_email else "")
     return f"""<!doctype html>
@@ -182,7 +184,7 @@ def _shell(inner: str, preheader: str, site_url: str, support_email: str = "") -
     </td></tr>
     <tr><td align='center' style='padding:22px 8px 0;'>{_wordmark(18)}</td></tr>
     <tr><td style='padding:8px 8px 0;font-family:{BODY};font-size:11px;color:{MUTED};text-align:center;'>
-      Engineered for the bold. You're receiving this because you placed an order at
+      Engineered for the bold. You're receiving this because {reason}
       <a href='{e(site_url)}' style='color:{MUTED};'>{e(site_url.replace("https://", ""))}</a>.
     </td></tr>
   </table>
@@ -212,9 +214,21 @@ def receipt_html(order: dict, site_url: str, support_email: str = "") -> str:
                f"<div style='margin-top:8px;'>{_items(order)}</div>"
                f"<div style='margin-top:14px;'>{_totals(order)}</div>")
     ship = _address(order)
+    refer = _card(_referral_block(order, site_url), pad="24px 28px") if order.get("referral_code") else ""
     preheader = (f"Order #{order.get('order_id')} confirmed — {inr(order.get('total', 0))}"
                  f"{' due on delivery' if cod else ' paid'}. Arriving in 3–5 business days.")
-    return _shell(_card(hero) + _card(receipt) + _card(ship, pad="22px 28px"), preheader, site_url, support_email)
+    return _shell(_card(hero) + _card(receipt) + refer + _card(ship, pad="22px 28px"), preheader, site_url, support_email)
+
+
+def _referral_block(order: dict, site_url: str) -> str:
+    code = order["referral_code"]
+    link = f"{site_url}/?{urlencode({'ref': code})}"
+    msg = f"I got my streetwear from Dapper Den. Use my code {code} for ₹200 off your first order (above ₹999): {link}"
+    return (f"<div style='font-family:{BODY};font-size:12px;font-weight:bold;letter-spacing:2px;color:{LIME};'>GIVE ₹200, GET ₹200</div>"
+            f"<div style='font-family:{BODY};font-size:15px;line-height:23px;color:{SOFT};margin-top:8px;'>"
+            f"Share your code. Your friend gets ₹200 off their first order, and when they order you get a ₹200 code too.</div>"
+            f"<div style=\"font-family:{DISPLAY};font-size:30px;letter-spacing:3px;color:{TEXT};margin-top:12px;\">{e(code)}</div>"
+            f"<div style='margin-top:14px;'>{_button('https://wa.me/?text=' + quote(msg), 'SHARE ON WHATSAPP &rarr;')}</div>")
 
 
 def receipt_text(order: dict, site_url: str) -> str:
@@ -227,6 +241,8 @@ def receipt_text(order: dict, site_url: str) -> str:
     lines += ["", f"Subtotal: {inr(order.get('subtotal', 0))}"]
     if order.get("discount"):
         lines.append(f"Coupon ({order.get('coupon')}): -{inr(order['discount'])}")
+    if order.get("prepaid_discount"):
+        lines.append(f"Paid online: -{inr(order['prepaid_discount'])}")
     lines.append(f"Shipping: {'FREE' if not order.get('shipping') else inr(order['shipping'])}")
     lines.append(f"{'Amount due on delivery' if is_cod(order) else 'Total paid'}: {inr(order.get('total', 0))} (incl. all taxes)")
     a = order.get("address") or {}
@@ -249,14 +265,17 @@ def receipt_page(order: dict, site_url: str, support_email: str = "") -> str:
     return page.replace(body_tag, body_tag + bar, 1)
 
 
-def status_html(order: dict, site_url: str, support_email: str = "") -> str:
+def status_html(order: dict, site_url: str, support_email: str = "", feedback_url: str = None) -> str:
     status = order.get("status", "")
     title, body = STATUS_COPY.get(status, (e(status).upper(), "there's an update on your order."))
     hero = (f"<div style='font-family:{BODY};font-size:12px;font-weight:bold;letter-spacing:2px;color:{LIME};'>ORDER #{e(order.get('order_id'))}</div>"
             f"<div style=\"font-family:{DISPLAY};font-size:36px;line-height:42px;color:{TEXT};margin-top:10px;\">{title}</div>"
             f"<div style='font-family:{BODY};font-size:15px;line-height:23px;color:{SOFT};margin-top:12px;'>Hey {e(first_name(order))}, {body}</div>"
             + (f"<div style='margin-top:26px;'>{_progress(status)}</div>" if status in STAGES else "")
-            + f"<div style='margin-top:24px;'>{_button(track_url(site_url, order), 'VIEW ORDER &rarr;')}</div>")
+            + f"<div style='margin-top:24px;'>{_button(feedback_url or track_url(site_url, order), 'HOW DID IT FIT? &rarr;' if feedback_url else 'VIEW ORDER &rarr;')}</div>")
+    if feedback_url:
+        hero += (f"<div style='font-family:{BODY};font-size:13px;line-height:20px;color:{MUTED};margin-top:14px;'>"
+                 f"Two taps per item: too small, just right or too big. Your answer goes straight into the size guide for the next shopper.</div>")
     summary = (f"<div style=\"font-family:{DISPLAY};font-size:20px;color:{TEXT};\">IN THIS ORDER</div>"
                f"<div style='margin-top:6px;'>{_items(order)}</div>")
     return _shell(_card(hero) + _card(summary), f"Order #{order.get('order_id')}: {status}", site_url, support_email)
@@ -274,3 +293,50 @@ def owner_alert_html(order: dict, site_url: str) -> str:
     body = f"{_items(order)}<div style='margin-top:14px;'>{_totals(order)}</div>"
     return _shell(_card(hero) + _card(body) + _card(_address(order), pad="22px 28px"),
                   f"New order #{order.get('order_id')} — {inr(order.get('total', 0))}", site_url)
+
+
+def _hero(label: str, title: str, body: str, button: str = "", extra: str = "") -> str:
+    return (f"<div style='font-family:{BODY};font-size:12px;font-weight:bold;letter-spacing:2px;color:{LIME};'>{label}</div>"
+            f"<div style=\"font-family:{DISPLAY};font-size:36px;line-height:42px;color:{TEXT};margin-top:10px;\">{title}</div>"
+            f"<div style='font-family:{BODY};font-size:15px;line-height:23px;color:{SOFT};margin-top:12px;'>{body}</div>"
+            + (f"<div style='margin-top:22px;'>{button}</div>" if button else "") + extra)
+
+
+def reminder_html(checkout: dict, restore_url: str, site_url: str, support_email: str = "") -> str:
+    """Abandoned-bag reminder: one email, sent once, with a link that refills the bag."""
+    name = (checkout.get("name") or "there").split(" ")[0] or "there"
+    total = sum(i["price"] * i["qty"] for i in checkout.get("items", []))
+    hero = _hero("STILL THINKING IT OVER?", "YOUR BAG IS<br/>WAITING.",
+                 f"Hey {e(name)}, you left {_pieces(checkout)} at checkout. We've saved your bag &mdash; "
+                 f"pick up where you left off. Pay online and save ₹50, or pay cash on delivery.",
+                 _button(restore_url, "COMPLETE YOUR ORDER &rarr;"))
+    bag = (f"<div style=\"font-family:{DISPLAY};font-size:20px;color:{TEXT};\">IN YOUR BAG</div>"
+           f"<div style='margin-top:6px;'>{_items(checkout)}</div>"
+           f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin-top:10px;'>{_row('Bag total', inr(total), strong=True, color=LIME)}</table>")
+    return _shell(_card(hero) + _card(bag), "Your bag is saved. Free shipping over ₹1,499, COD and 15-day returns.", site_url, support_email,
+                  reason="you started a checkout at")
+
+
+def _pieces(checkout: dict) -> str:
+    n = sum(i.get("qty", 1) for i in checkout.get("items", []))
+    return "1 piece" if n == 1 else f"{n} pieces"
+
+
+def referral_reward_html(referrer: dict, code: str, friend: str, site_url: str, support_email: str = "") -> str:
+    hero = _hero("GIVE ₹200, GET ₹200", "YOUR CODE<br/>WORKED.",
+                 f"Hey {e(first_name(referrer))}, {e(friend)} just placed their first order with your code. "
+                 f"Here's your ₹200 thank-you, for any order above ₹999. It works once.",
+                 _button(site_url, "SHOP THE DROP &rarr;"),
+                 f"<div style=\"font-family:{DISPLAY};font-size:34px;letter-spacing:3px;color:{TEXT};margin-top:20px;\">{e(code)}</div>")
+    return _shell(_card(hero), f"{friend} used your code. Here's ₹200 off your next order.", site_url, support_email)
+
+
+def drop_confirm_html(drops_at: datetime, code: str, site_url: str, support_email: str = "") -> str:
+    when = drops_at.astimezone(IST).strftime("%A %d %b, %I:%M %p IST").replace(" 0", " ")
+    hero = _hero("YOU'RE ON THE LIST", "ANIME LEGENDS<br/>DROPS SOON.",
+                 f"The next drop lands <b style='color:{TEXT};'>{e(when)}</b>. You'll hear about it first. "
+                 f"As a drop-list member, take 15% off any order above ₹1,499 with this code:",
+                 _button(f"{site_url}/drop", "SEE THE DROP &rarr;"),
+                 f"<div style=\"font-family:{DISPLAY};font-size:34px;letter-spacing:3px;color:{TEXT};margin-top:20px;\">{e(code)}</div>")
+    return _shell(_card(hero), f"You're on the drop list. {when}.", site_url, support_email,
+                  reason="you joined the drop list at")

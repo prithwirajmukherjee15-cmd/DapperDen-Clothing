@@ -32,7 +32,8 @@ def test_order_is_priced_on_the_server(client):
     shipping = 0 if subtotal >= server.FREE_SHIPPING_MIN else server.SHIPPING_FEE
     assert data["subtotal"] == subtotal
     assert data["discount"] == 0
-    assert data["total"] == subtotal + shipping
+    assert data["prepaid_discount"] == server.PREPAID_DISCOUNT  # paid by UPI, not cash on delivery
+    assert data["total"] == subtotal - server.PREPAID_DISCOUNT + shipping
     assert data["items"][0]["price"] == PRODUCT["price"]
     assert data["items"][0]["name"] == PRODUCT["name"]
     assert "_id" not in data
