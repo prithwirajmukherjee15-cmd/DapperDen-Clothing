@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "../api";
-import { PRODUCTS as MOCK_PRODUCTS } from "../mock/mock";
+import BUNDLED_PRODUCTS from "../mock/catalog.json";
 
 const DataContext = createContext(null);
 export const useData = () => useContext(DataContext);
 
 export function DataProvider({ children }) {
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState(BUNDLED_PRODUCTS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function DataProvider({ children }) {
         if (active && Array.isArray(res.data) && res.data.length) setProducts(res.data);
       })
       .catch(() => {
-        // graceful fallback to bundled catalog
+        // keep showing the bundled copy of the catalogue
       })
       .finally(() => active && setLoading(false));
     return () => {

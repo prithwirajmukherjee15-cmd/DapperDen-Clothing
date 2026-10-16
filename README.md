@@ -155,6 +155,6 @@ React 19, Tailwind and Framer Motion on Netlify; a FastAPI API with MongoDB Atla
 - **Orders are priced on the server.** The browser only sends what was picked, so a tampered cart can't change the price.
 - **Checkout never fakes a success.** A failed order shows an error and keeps the bag; *Order confirmed* only appears once the order is saved.
 - **Emails go out after the order is saved**, so a slow mail provider never delays checkout. All customer input is escaped.
-- 26 offline API tests cover pricing, coupons, referrals, bag reminders, fit feedback, the drop list, tracking, receipts, emails and the admin endpoints.
+- 28 offline API tests cover pricing, coupons, referrals, bag reminders, fit feedback, the drop list, tracking, receipts, emails, the admin endpoints and catalogue consistency.
 
 Architecture, API, setup, tests and deployment are in **[TECHNICAL.md](TECHNICAL.md)**.

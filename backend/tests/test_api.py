@@ -1,5 +1,6 @@
 """Offline API tests — run with `pytest` from backend/, no MongoDB needed."""
 import pytest
+from pathlib import Path
 
 import server
 from catalog import PRODUCTS
@@ -183,3 +184,20 @@ def test_health_reports_db_status(client, monkeypatch):
     r = client.get("/api/health")
     assert r.status_code == 503
     assert r.json()["reason"] == "OperationFailure (code 8000: AtlasError)"
+
+
+def test_bundled_catalog_matches_api_catalog():
+    # The storefront shows frontend/src/mock/catalog.json until the API answers; it must not drift.
+    import importlib.util
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("export_catalog", root / "backend" / "scripts" / "export_catalog.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.OUT.read_text(encoding="utf-8") == mod.render(), "run: python backend/scripts/export_catalog.py"
+
+
+def test_every_product_has_unique_images():
+    import catalog
+    seen = [u for p in catalog.PRODUCTS for u in p["images"]]
+    assert all(p["images"] for p in catalog.PRODUCTS)
+    assert len(seen) == len(set(seen))

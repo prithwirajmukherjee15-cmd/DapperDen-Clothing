@@ -121,10 +121,10 @@ function FeaturedGrid() {
 
 function Stats() {
   const stats = [
-    ["2.4M+", "Tees shipped"],
-    ["48", "Countries"],
+    ["115", "Styles for men, women & kids"],
+    ["6", "Themed universes"],
     ["240 GSM", "Heavyweight cotton"],
-    ["4.8★", "Avg rating"],
+    ["8 PM", "New drop every Friday"],
   ];
   return (
     <section className="mx-auto max-w-7xl px-5 py-14">

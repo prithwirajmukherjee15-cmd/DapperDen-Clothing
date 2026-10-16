@@ -175,9 +175,9 @@ PRODUCTS = (
         _mk("orbit-beanie", "Orbit Knit Beanie", "accessories", "cosmic-heroes", 599, 899, [PX(17474801), PX(7026766)], None, 4.3, 204, _OS),
         _mk("shadow-crossbody", "Shadow Crossbody Bag", "accessories", "shadow-vigilante", 1299, 1899, [PX(27174548), PX(34897553)], "Trending", 4.5, 167, _OS),
         _mk("neon-shades", "Neon Blade Sunglasses", "accessories", "neon-dreams", 899, 1399, [PX(34978681), PX(5202048)], None, 4.4, 142, _OS),
-        _mk("astro-sneakers", "Astro Trail Sneakers", "accessories", "cosmic-heroes", 2999, 3999, [UN("1595950653106-6c9ebd614d3a"), UN("1542291026-7eec264c27ff")], "Bestseller", 4.7, 388, _SHOE),
+        _mk("astro-sneakers", "Astro Trail Sneakers", "accessories", "cosmic-heroes", 2999, 3999, [PX(1027130)], "Bestseller", 4.7, 388, _SHOE),
         _mk("ronin-chain", "Ronin Link Chain", "accessories", "anime-legends", 749, 1099, [PX(15254672)], None, 4.3, 96, _OS),
-        _mk("volt-sneakers", "Volt Runner Sneakers", "accessories", "neon-dreams", 3199, 4299, [UN("1606107557195-0e29a4b5b4aa"), PX(1027130)], "Trending", 4.6, 254, _SHOE),
+        _mk("volt-sneakers", "Volt Runner Sneakers", "accessories", "neon-dreams", 3199, 4299, [UN("1606107557195-0e29a4b5b4aa")], "Trending", 4.6, 254, _SHOE),
         _mk("squad-backpack", "Squad Daypack", "accessories", "squad-goals", 1499, 2199, [PX(701742)], None, 4.4, 120, _OS),
     ]
 )
@@ -286,6 +286,62 @@ CATEGORIES_KIDS = [
     {"id": "hoodies", "name": "Hoodies", "slug": "hoodies", "image": K_HOOD[0]},
     {"id": "joggers", "name": "Joggers", "slug": "joggers", "image": K_JOG[0]},
 ]
+# ---------- retouched photos ----------
+# These stock photos showed other brands' logos, licensed characters or off-brand slogans. The retouched copies
+# have them removed and carry original Dapper Den prints named after the product. The storefront serves them
+# from frontend/public/products/. None means the photo was dropped.
+_LOCAL = "https://dapper-denn.netlify.app/products/"
+RETOUCHED = {
+    UN("1583743814966-8936f5b7be1a"): _LOCAL + "starforge-tee-2.jpg",
+    PX(29323278): _LOCAL + "crew-tee-2.jpg",
+    UN("1525393839361-867d646aea41"): _LOCAL + "retro-tee-2.jpg",
+    UN("1627225793904-a2f900a6e4cf"): _LOCAL + "pixel-tee-1.jpg",
+    PX(36908588): _LOCAL + "dragon-tee-1.jpg",
+    UN("1627225925683-1da7021732ea"): _LOCAL + "nebula-drift-tee-2.jpg",
+    PX(26797742): _LOCAL + "ronin-oversized-1.jpg",
+    UN("1618453292610-4119319e5ac7"): _LOCAL + "ronin-oversized-2.jpg",
+    PX(10250614): None,  # spellbound-tee
+    UN("1627225924765-552d49cf47ad"): _LOCAL + "spellbound-tee-2.jpg",
+    UN("1635650804263-1a1941e14df5"): _LOCAL + "glow-tee-1.jpg",
+    UN("1589902860314-e910697dea18"): _LOCAL + "titan-oversized-1.jpg",
+    UN("1775817104298-522393e1d72b"): _LOCAL + "hex-oversized-1.jpg",
+    UN("1615397587950-3cbb55f95b77"): _LOCAL + "orbit-hoodie-2.jpg",
+    UN("1609885654455-f81e5a682c87"): _LOCAL + "nova-hoodie-1.jpg",
+    PX(34582210): _LOCAL + "nova-hoodie-2.jpg",
+    UN("1601063476271-a159c71ab0b3"): _LOCAL + "shogun-hoodie-1.jpg",
+    PX(29996214): _LOCAL + "eclipse-hoodie-2.jpg",
+    UN("1620780327051-f7ad06f5b1e0"): _LOCAL + "mystic-hoodie-2.jpg",
+    UN("1711175017307-bbacf7c2ca13"): _LOCAL + "ninja-jogger-1.jpg",
+    UN("1533603531139-2c4d04df8f16"): _LOCAL + "stealth-cap-1.jpg",
+    UN("1526127409788-75f6323664f5"): _LOCAL + "stealth-cap-2.jpg",
+    UN("1606107557195-0e29a4b5b4aa"): _LOCAL + "volt-sneakers-1.jpg",
+    UN("1661110546797-d86cc72a2765"): _LOCAL + "w-nova-tee-1.jpg",
+    UN("1616006897093-5e4635c0de35"): _LOCAL + "w-sakura-tee-1.jpg",
+    PX(37011552): _LOCAL + "w-crew-tee-1.jpg",
+    UN("1583744999783-efe9dc5eac91"): _LOCAL + "w-glow-tee-1.jpg",
+    UN("1633292750937-120a94f5c2bb"): _LOCAL + "w-kaiju-hoodie-1.jpg",
+    UN("1633292587737-f898a032e562"): _LOCAL + "w-umbra-hoodie-1.jpg",
+    PX(18556218): _LOCAL + "w-potion-hoodie-1.jpg",
+    UN("1677466923317-fe39ab5de57b"): _LOCAL + "w-nova-hoodie-1.jpg",
+    UN("1569032915512-922c2e506c51"): _LOCAL + "w-blackout-jogger-1.jpg",
+    UN("1627859774205-83c1279a6382"): _LOCAL + "k-ninja-tee-1.jpg",
+    UN("1620905385976-9f191e837efd"): _LOCAL + "k-shadow-tee-1.jpg",
+    UN("1657779532102-faa144145bb5"): _LOCAL + "k-glow-tee-1.jpg",
+    PX(26837734): _LOCAL + "k-comet-tee-1.jpg",
+    UN("1664255566089-95bd5c6af061"): _LOCAL + "k-umbra-hoodie-1.jpg",
+    PX(37451174): _LOCAL + "k-shogun-hoodie-1.jpg",
+}
+
+
+def _clean(url):
+    return RETOUCHED.get(url, url)
+
+
+for _p in PRODUCTS:
+    _p["images"] = [_clean(u) for u in _p["images"] if _clean(u)]
+for _c in CATEGORIES + CATEGORIES_WOMEN + CATEGORIES_KIDS:
+    _c["image"] = _clean(_c["image"]) or _c["image"]
+
 CATEGORIES_BY_GENDER = {"men": CATEGORIES, "women": CATEGORIES_WOMEN, "kids": CATEGORIES_KIDS}
 
 COUPONS = {

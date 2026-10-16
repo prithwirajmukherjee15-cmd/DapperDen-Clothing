@@ -79,7 +79,10 @@ export default function Footer() {
         </div>
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#2a2a30] pt-6 text-xs text-[#8b8b93] md:flex-row">
           <p>© 2026 Dapper Den. All rights reserved.</p>
-          <p>Made for the streets. Shipped worldwide.</p>
+          <p className="max-w-xl text-center md:text-right" data-testid="demo-note">
+            Portfolio demo store: payments run in a sandbox and nothing ships. Ratings and reviews are sample data.
+            Photos from Unsplash and Pexels, retouched with original Dapper Den prints.
+          </p>
         </div>
       </div>
     </footer>

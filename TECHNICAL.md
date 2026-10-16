@@ -11,7 +11,9 @@ How the store is built and how to run it. For what Dapper Den is and why it exis
 | Database | MongoDB: the `orders` collection, with a unique index on `order_id` | MongoDB Atlas |
 | Email | Resend: receipts, shipping updates, new-order alerts | Resend |
 
-The product catalogue (115 products, 6 themed collections, coupons) lives in `backend/catalog.py`. The storefront also bundles a copy, so it can still browse if the API is asleep.
+The product catalogue (115 products, 6 themed collections, coupons) lives in `backend/catalog.py`. The storefront bundles a copy (`frontend/src/mock/catalog.json`), so it can still browse while the API wakes up. Regenerate it with `python backend/scripts/export_catalog.py` after changing the catalogue; a test fails if the two drift apart.
+
+Product photos are Unsplash and Pexels stock. Photos that showed other brands' logos, licensed characters or off-brand slogans were retouched: the third-party marks were removed and replaced with original Dapper Den prints named after each product. The storefront serves these from `frontend/public/products/`.
 
 ```
 frontend/src/
@@ -83,7 +85,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-The 26 offline tests run against a fake database, so they need no MongoDB. They cover:
+The 28 offline tests run against a fake database, so they need no MongoDB. They cover:
 
 - server-side pricing, coupons and validation
 - the prepaid discount, referral and reward codes and their rules
@@ -94,6 +96,7 @@ The 26 offline tests run against a fake database, so they need no MongoDB. They 
 - tracking and receipt access
 - email escaping and content (receipt, COD wording, owner alert)
 - the admin endpoints and the health check
+- the bundled catalogue matching the API's, and no product photo being reused
 
 `tests/test_backend_regression.py` runs against a live deployment. Instructions are at the top of the file; note that it creates a real test order.
 

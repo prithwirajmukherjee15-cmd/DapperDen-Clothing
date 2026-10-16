@@ -108,6 +108,9 @@ export default function Checkout() {
               className="mt-8 w-full rounded-full bg-lime py-3.5 font-grotesk font-bold text-[#0a0a0b] transition enabled:hover:bg-lime-dim disabled:cursor-not-allowed disabled:opacity-40">
               Continue to Payment
             </button>
+            <p className="mt-3 text-center text-xs text-[#8b8b93]" data-testid="demo-checkout-note">
+              Demo store: the payment step is a sandbox, so no money is taken and nothing ships.
+            </p>
           </motion.div>
         )}
 

@@ -7,6 +7,7 @@ export default function MarqueeBar() {
     "240 GSM HEAVYWEIGHT COTTON",
     "EASY 15-DAY RETURNS",
     "COD AVAILABLE",
+    "DEMO STORE: SANDBOX PAYMENTS, NOTHING SHIPS",
   ];
   const row = [...items, ...items];
   return (
