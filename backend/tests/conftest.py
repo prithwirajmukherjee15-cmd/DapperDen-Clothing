@@ -32,6 +32,31 @@ class FakeOrders:
         doc = self.docs.get(query.get("order_id"))
         return dict(doc) if doc else None
 
+    async def update_one(self, query, update):
+        doc = self.docs[query["order_id"]]
+        doc.update(update.get("$set", {}))
+        for k, v in update.get("$push", {}).items():
+            doc.setdefault(k, []).append(v)
+
+    def find(self, query=None, projection=None):
+        return FakeCursor(list(self.docs.values()))
+
+
+class FakeCursor:
+    def __init__(self, docs):
+        self.docs = docs
+
+    def sort(self, key, direction):
+        self.docs.sort(key=lambda d: d[key], reverse=direction < 0)
+        return self
+
+    def limit(self, n):
+        self.docs = self.docs[:n]
+        return self
+
+    async def to_list(self, n):
+        return [dict(d) for d in self.docs[:n]]
+
 
 class FakeDB:
     def __init__(self):

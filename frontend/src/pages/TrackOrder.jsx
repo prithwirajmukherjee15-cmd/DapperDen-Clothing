@@ -1,16 +1,18 @@
-import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { PackageSearch, Truck, CheckCircle2, MapPin, Loader2, Package } from "lucide-react";
-import api from "../api";
+import { PackageSearch, Truck, CheckCircle2, MapPin, Loader2, Package, Download } from "lucide-react";
+import api, { receiptUrl } from "../api";
 import { formatINR } from "../mock/mock";
 
 const STAGES = ["Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered"];
 
 export default function TrackOrder() {
   const { state } = useLocation();
-  const [orderId, setOrderId] = useState(state?.orderId || "");
-  const [phone, setPhone] = useState(state?.phone || "");
+  const [params] = useSearchParams();
+  // Links in order emails carry ?order=...&phone=... so the page opens already tracked.
+  const [orderId, setOrderId] = useState(params.get("order") || state?.orderId || "");
+  const [phone, setPhone] = useState((params.get("phone") || state?.phone || "").replace(/\D/g, "").slice(-10));
   const [order, setOrder] = useState(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,12 @@ export default function TrackOrder() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (orderId && phone.length === 10) track();
+    // run once on load for links from emails / the confirmation page
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activeStage = order ? Math.max(0, STAGES.indexOf(order.status)) : 0;
 
@@ -98,9 +106,13 @@ export default function TrackOrder() {
               ))}
             </div>
             <div className="mt-5 flex items-center justify-between border-t border-[#2a2a30] pt-4">
-              <span className="text-sm text-[#8b8b93]">Total paid</span>
+              <span className="text-sm text-[#8b8b93]">{/cash/i.test(order.payment_method || "") ? "Due on delivery" : "Total paid"}</span>
               <span className="font-display text-2xl text-white">{formatINR(order.total)}</span>
             </div>
+            <a href={receiptUrl(order.order_id, phone)} target="_blank" rel="noreferrer" data-testid="track-receipt-link"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-lime hover:underline">
+              <Download size={15} /> Download receipt
+            </a>
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#0f0f12] p-3 text-sm text-[#c9c9cf]">
               <MapPin size={15} className="mt-0.5 shrink-0 text-lime" />
               <span>{order.address?.line}, {order.address?.city}, {order.address?.stateName} – {order.address?.pincode}</span>

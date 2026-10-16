@@ -37,6 +37,10 @@ Environment variables:
 | `CORS_ORIGINS` | `*` |
 | `RESEND_API_KEY` | *(leave empty — emails stay mocked)* |
 | `SENDER_EMAIL` | `onboarding@resend.dev` |
+| `SITE_URL` | your Netlify URL, e.g. `https://dapper-denn.netlify.app` (used for links in emails) |
+| `SUPPORT_EMAIL` | *(optional)* your support inbox — shown in emails and used as reply-to |
+| `ORDER_NOTIFY_EMAIL` | *(optional)* where you get a "New order" email for every order |
+| `ADMIN_TOKEN` | *(optional)* long random secret that unlocks the admin endpoints (step 5) |
 
 Create it. When live, copy the URL (e.g. `https://dapperden-api.onrender.com`).
 Test: open `.../api/` → should show `{"message":"Dapper Den API"}`.
@@ -65,10 +69,34 @@ Click **Deploy**. When it finishes, open the Netlify URL — your store is live.
 ---
 
 ## 4) (Optional) Real order emails — Resend
-1. Get an API key at https://resend.com (`re_...`); verify a domain, or use
-   `onboarding@resend.dev` for testing.
-2. In the **Render backend** → Environment: set `RESEND_API_KEY` and `SENDER_EMAIL`.
-   Save → backend redeploys → emails now send for real (they're logged/"MOCKED" until then).
+Every order sends a branded receipt to the customer (and a "New order" alert to
+`ORDER_NOTIFY_EMAIL` if set). Until `RESEND_API_KEY` is set they are only logged ("MOCKED").
+
+1. Get an API key at https://resend.com (`re_...`).
+2. In the **Render backend** → Environment: set `RESEND_API_KEY`. Save → backend redeploys.
+3. **Important:** with the test sender `onboarding@resend.dev`, Resend only delivers to the
+   email address of your own Resend account. To email real customers, verify your domain in
+   Resend (Domains → Add domain) and set `SENDER_EMAIL` to e.g. `Dapper Den <orders@yourdomain.com>`.
+
+Customers can also open/print their receipt any time from the order confirmation page or the
+Track Order page (`/api/orders/receipt?order_id=...&phone=...`).
+
+---
+
+## 5) (Optional) Managing orders — status updates
+Set `ADMIN_TOKEN` on Render to a long random string (keep it secret). Then:
+
+```bash
+# List the latest orders
+curl -H "x-admin-token: YOUR_TOKEN" https://YOUR-API.onrender.com/api/admin/orders
+
+# Move an order along — the customer gets a branded update email
+curl -X POST -H "x-admin-token: YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"status": "Shipped"}' https://YOUR-API.onrender.com/api/admin/orders/DD1234567890/status
+```
+
+Statuses: `Confirmed`, `Packed`, `Shipped`, `Out for Delivery`, `Delivered`, `Cancelled`.
+Add `"notify": false` to update without emailing. The Track Order page shows the new status.
 
 ---
 

@@ -24,3 +24,11 @@ services:
         sync: false
       - key: SENDER_EMAIL
         value: onboarding@resend.dev
+      - key: SITE_URL           # links in emails point here
+        value: https://dapper-denn.netlify.app
+      - key: SUPPORT_EMAIL      # optional reply-to shown in emails
+        sync: false
+      - key: ORDER_NOTIFY_EMAIL # optional: get an email for every new order
+        sync: false
+      - key: ADMIN_TOKEN        # optional: unlocks /api/admin/* (leave blank to disable)
+        sync: false

@@ -7,4 +7,7 @@ const api = axios.create({
   baseURL: API,
 });
 
+export const receiptUrl = (orderId, phone) =>
+  `${API}/orders/receipt?${new URLSearchParams({ order_id: orderId, phone })}`;
+
 export default api;

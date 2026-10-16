@@ -1,10 +1,10 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Header
+from fastapi.responses import HTMLResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
-import html
 import secrets
 import asyncio
 import resend
@@ -14,6 +14,7 @@ from pymongo.errors import DuplicateKeyError
 from typing import List, Optional
 from datetime import datetime, timezone
 
+import emails
 from catalog import CATEGORIES, COLLECTIONS, PRODUCTS, COUPONS, CATEGORIES_BY_GENDER
 
 PRODUCTS_BY_ID = {p["id"]: p for p in PRODUCTS}
@@ -28,7 +29,11 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '').strip()
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev').strip()
+SITE_URL = os.environ.get('SITE_URL', 'https://dapper-denn.netlify.app').strip().rstrip('/')
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', '').strip()
+ORDER_NOTIFY_EMAIL = os.environ.get('ORDER_NOTIFY_EMAIL', '').strip()
+ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN', '').strip()
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
@@ -75,79 +80,41 @@ class CouponRequest(BaseModel):
 
 
 # ---------- Email ----------
-def _format_inr(v) -> str:
-    try:
-        return "₹" + f"{int(round(float(v))):,}"
-    except Exception:
-        return f"₹{v}"
+def _sender() -> str:
+    return SENDER_EMAIL if "<" in SENDER_EMAIL else f"Dapper Den <{SENDER_EMAIL}>"
 
 
-def _e(v) -> str:
-    return html.escape(str(v if v is not None else ""), quote=True)
-
-
-def _order_email_html(order: dict) -> str:
-    rows = "".join(
-        f"""<tr>
-          <td style='padding:12px 0;border-bottom:1px solid #ececec;'>
-            <table role='presentation' cellpadding='0' cellspacing='0'><tr>
-              <td><img src='{_e(i.get('image',''))}' width='56' height='64' style='border-radius:8px;object-fit:cover;display:block;' /></td>
-              <td style='padding-left:14px;font-family:Arial,sans-serif;'>
-                <div style='font-size:14px;font-weight:bold;color:#111;'>{_e(i.get('name',''))}</div>
-                <div style='font-size:12px;color:#888;'>Size {_e(i.get('size',''))} &middot; {_e(i.get('color',''))} &middot; Qty {_e(i.get('qty',1))}</div>
-              </td>
-            </tr></table>
-          </td>
-          <td align='right' style='padding:12px 0;border-bottom:1px solid #ececec;font-family:Arial,sans-serif;font-size:14px;color:#111;font-weight:bold;'>{_format_inr(i.get('price',0)*i.get('qty',1))}</td>
-        </tr>"""
-        for i in order.get("items", [])
-    )
-    addr = order.get("address", {})
-    return f"""
-    <div style='background:#0a0a0b;padding:32px 0;font-family:Arial,sans-serif;'>
-      <table role='presentation' width='560' align='center' cellpadding='0' cellspacing='0' style='background:#ffffff;border-radius:16px;overflow:hidden;'>
-        <tr><td style='background:#0a0a0b;padding:24px 32px;'>
-          <span style='font-size:22px;font-weight:800;color:#ffffff;letter-spacing:1px;'>DAPPER<span style='color:#c6ff3d;'>DEN</span></span>
-        </td></tr>
-        <tr><td style='padding:32px 32px 8px;'>
-          <div style='font-size:22px;font-weight:800;color:#111;'>Order Confirmed! &#127881;</div>
-          <div style='font-size:14px;color:#666;margin-top:6px;'>Hey {_e((addr.get('name') or 'there').split(' ')[0])}, your drip is locked in. Order <b>#{_e(order.get('order_id'))}</b>.</div>
-        </td></tr>
-        <tr><td style='padding:16px 32px;'>
-          <table role='presentation' width='100%' cellpadding='0' cellspacing='0'>{rows}</table>
-        </td></tr>
-        <tr><td style='padding:8px 32px 24px;'>
-          <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='font-size:14px;color:#111;'>
-            <tr><td style='color:#666;padding:4px 0;'>Payment</td><td align='right'>{_e(order.get('payment_method','Paid'))}</td></tr>
-            <tr><td style='color:#666;padding:4px 0;'>Amount Paid</td><td align='right' style='font-weight:800;'>{_format_inr(order.get('total',0))}</td></tr>
-            <tr><td style='color:#666;padding:4px 0;'>Delivery</td><td align='right'>3&ndash;5 business days</td></tr>
-          </table>
-          <div style='margin-top:16px;padding:16px;background:#f6f6f6;border-radius:12px;font-size:13px;color:#444;'>
-            <b>Shipping to</b><br/>{_e(addr.get('line',''))}<br/>{_e(addr.get('city',''))}, {_e(addr.get('stateName',''))} &ndash; {_e(addr.get('pincode',''))}<br/>Phone: {_e(addr.get('phone',''))}
-          </div>
-        </td></tr>
-        <tr><td style='background:#0a0a0b;padding:20px 32px;text-align:center;'>
-          <span style='font-size:12px;color:#888;'>Dapper Den &middot; Premium streetwear engineered for the bold.</span>
-        </td></tr>
-      </table>
-    </div>"""
-
-
-async def send_order_email(order: dict, recipient: Optional[str]):
-    if not recipient:
-        logger.info("[ORDER EMAIL] No recipient email for order %s — skipped", order.get("order_id"))
+async def send_email(to: Optional[str], subject: str, html_body: str, text_body: Optional[str] = None, tag: str = ""):
+    if not to:
+        logger.info("[EMAIL %s] No recipient — skipped", tag)
         return
-    subject = f"Your Dapper Den order #{order.get('order_id')} is confirmed"
-    html = _order_email_html(order)
     if not RESEND_API_KEY:
-        logger.info("[ORDER EMAIL - MOCKED] Would send '%s' to %s (set RESEND_API_KEY to send for real)", subject, recipient)
+        logger.info("[EMAIL %s - MOCKED] Would send '%s' to %s (set RESEND_API_KEY to send for real)", tag, subject, to)
         return
+    params = {"from": _sender(), "to": [to], "subject": subject, "html": html_body}
+    if text_body:
+        params["text"] = text_body
+    if SUPPORT_EMAIL:
+        params["reply_to"] = SUPPORT_EMAIL
     try:
-        params = {"from": SENDER_EMAIL, "to": [recipient], "subject": subject, "html": html}
         await asyncio.to_thread(resend.Emails.send, params)
-        logger.info("[ORDER EMAIL] Sent to %s for order %s", recipient, order.get("order_id"))
-    except Exception as e:
-        logger.error("[ORDER EMAIL] Failed for order %s: %s", order.get("order_id"), e)
+        logger.info("[EMAIL %s] Sent '%s' to %s", tag, subject, to)
+    except Exception as ex:
+        logger.error("[EMAIL %s] Failed to send '%s' to %s: %s", tag, subject, to, ex)
+
+
+async def send_order_emails(order: dict):
+    oid, total = order.get("order_id"), emails.inr(order.get("total", 0))
+    await send_email(
+        (order.get("address") or {}).get("email"),
+        f"Order #{oid} confirmed — your Dapper Den receipt",
+        emails.receipt_html(order, SITE_URL, SUPPORT_EMAIL),
+        emails.receipt_text(order, SITE_URL),
+        tag="receipt",
+    )
+    method = "COD" if emails.is_cod(order) else order.get("payment_method", "")
+    await send_email(ORDER_NOTIFY_EMAIL, f"New order #{oid} — {total} ({method})",
+                     emails.owner_alert_html(order, SITE_URL), tag="owner-alert")
 
 
 # ---------- Catalog routes ----------
@@ -226,7 +193,7 @@ def _price_items(items: List[OrderItem]) -> List[dict]:
 
 
 @api_router.post("/orders")
-async def create_order(payload: OrderCreate):
+async def create_order(payload: OrderCreate, background: BackgroundTasks):
     items = _price_items(payload.items)
     subtotal = sum(i["price"] * i["qty"] for i in items)
     discount = 0
@@ -262,15 +229,13 @@ async def create_order(payload: OrderCreate):
         raise HTTPException(status_code=503, detail="Could not allocate an order ID, please retry")
     doc.pop("_id", None)
 
-    recipient = payload.address.email
-    await send_order_email(doc, recipient)
-
     doc["created_at"] = doc["created_at"].isoformat()
+    # Emails go out after the response so a slow mail provider never delays checkout.
+    background.add_task(send_order_emails, dict(doc))
     return doc
 
 
-@api_router.get("/orders/track")
-async def track_order(order_id: str, phone: str):
+async def _find_order_for_customer(order_id: str, phone: str) -> dict:
     oid = order_id.strip().upper()
     order = await db.orders.find_one({"order_id": oid}, {"_id": 0})
     if not order:
@@ -281,6 +246,66 @@ async def track_order(order_id: str, phone: str):
     if isinstance(order.get("created_at"), datetime):
         order["created_at"] = order["created_at"].isoformat()
     return order
+
+
+@api_router.get("/orders/track")
+async def track_order(order_id: str, phone: str):
+    return await _find_order_for_customer(order_id, phone)
+
+
+@api_router.get("/orders/receipt", response_class=HTMLResponse)
+async def order_receipt(order_id: str, phone: str):
+    """Printable receipt page (same design as the confirmation email)."""
+    order = await _find_order_for_customer(order_id, phone)
+    return HTMLResponse(emails.receipt_page(order, SITE_URL, SUPPORT_EMAIL))
+
+
+# ---------- Admin: order status updates ----------
+ORDER_STATUSES = emails.STAGES + ["Cancelled"]
+
+
+class StatusUpdate(BaseModel):
+    status: str
+    notify: bool = True
+
+
+def _require_admin(token: str):
+    if not ADMIN_TOKEN or not secrets.compare_digest(token.encode(), ADMIN_TOKEN.encode()):
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+
+@api_router.get("/admin/orders")
+async def list_orders(limit: int = 50, x_admin_token: str = Header(default="")):
+    """Most recent orders first. Disabled unless ADMIN_TOKEN is set on the server."""
+    _require_admin(x_admin_token)
+    limit = max(1, min(limit, 200))
+    return await db.orders.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+
+
+@api_router.post("/admin/orders/{order_id}/status")
+async def update_order_status(order_id: str, payload: StatusUpdate, background: BackgroundTasks,
+                              x_admin_token: str = Header(default="")):
+    """Move an order along (Packed → Shipped → ...) and email the customer.
+    Disabled unless ADMIN_TOKEN is set on the server."""
+    _require_admin(x_admin_token)
+    if payload.status not in ORDER_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {', '.join(ORDER_STATUSES)}")
+    oid = order_id.strip().upper()
+    order = await db.orders.find_one({"order_id": oid}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    now = datetime.now(timezone.utc)
+    await db.orders.update_one({"order_id": oid}, {
+        "$set": {"status": payload.status, "updated_at": now},
+        "$push": {"status_history": {"status": payload.status, "at": now}},
+    })
+    changed = order.get("status") != payload.status
+    order["status"] = payload.status
+    if payload.notify and changed:
+        background.add_task(
+            send_email, (order.get("address") or {}).get("email"),
+            f"Order #{oid}: {payload.status}", emails.status_html(order, SITE_URL, SUPPORT_EMAIL), tag="status")
+    return {"order_id": oid, "status": payload.status}
 
 
 @api_router.get("/")

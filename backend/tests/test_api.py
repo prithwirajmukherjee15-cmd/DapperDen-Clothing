@@ -1,4 +1,6 @@
 """Offline API tests — run with `pytest` from backend/, no MongoDB needed."""
+import pytest
+
 import server
 from catalog import PRODUCTS
 
@@ -85,13 +87,85 @@ def test_coupon_validate_bad_subtotal_is_422_not_500(client):
 
 
 def test_order_email_escapes_customer_input():
-    html = server._order_email_html({
+    import emails
+
+    html = emails.receipt_html({
         "order_id": "DD1",
         "items": [{"name": "Tee", "image": "x.jpg", "size": "M", "color": "<script>", "qty": 1, "price": 10}],
         "address": {"name": "<a href='http://evil'>Click</a>", "line": "<img src=x>", "city": "C",
                     "stateName": "S", "pincode": "1", "phone": "9"},
-    })
+    }, "https://shop.example")
     assert "<script>" not in html
     assert "<a href='http://evil'>" not in html
     assert "<img src=x>" not in html
     assert "&lt;img src=x&gt;" in html
+
+
+@pytest.fixture
+def sent(monkeypatch):
+    """Capture outgoing emails instead of sending them."""
+    log = []
+
+    async def fake_send(to, subject, html_body, text_body=None, tag=""):
+        log.append({"to": to, "subject": subject, "html": html_body, "text": text_body, "tag": tag})
+
+    monkeypatch.setattr(server, "send_email", fake_send)
+    monkeypatch.setattr(server, "ORDER_NOTIFY_EMAIL", "owner@example.com")
+    return log
+
+
+def test_order_sends_branded_receipt_and_owner_alert(client, sent):
+    order = client.post("/api/orders", json=order_payload(coupon="DAPPER10")).json()
+    receipt = next(m for m in sent if m["tag"] == "receipt")
+    alert = next(m for m in sent if m["tag"] == "owner-alert")
+    assert receipt["to"] == ADDRESS["email"]
+    assert order["order_id"] in receipt["subject"]
+    for text in ["DAPPER", "RECEIPT", PRODUCT["name"], "DAPPER10", "Total paid",
+                 f"/track?order={order['order_id']}&amp;phone=9876543210"]:
+        assert text in receipt["html"], text
+    assert "Total paid" in receipt["text"]
+    assert alert["to"] == "owner@example.com" and order["order_id"] in alert["subject"]
+
+
+def test_cod_receipt_says_amount_due(client, sent):
+    client.post("/api/orders", json=order_payload(payment_method="Cash on Delivery"))
+    receipt = next(m for m in sent if m["tag"] == "receipt")
+    assert "Amount due on delivery" in receipt["html"]
+    assert "Total paid" not in receipt["html"]
+
+
+def test_receipt_page_requires_matching_phone(client):
+    order = client.post("/api/orders", json=order_payload()).json()
+    ok = client.get("/api/orders/receipt", params={"order_id": order["order_id"], "phone": "9876543210"})
+    assert ok.status_code == 200 and "text/html" in ok.headers["content-type"]
+    assert "Print / Save as PDF" in ok.text and order["order_id"] in ok.text
+    bad = client.get("/api/orders/receipt", params={"order_id": order["order_id"], "phone": "1111111111"})
+    assert bad.status_code == 403
+
+
+def test_admin_endpoints_disabled_without_token(client, monkeypatch):
+    monkeypatch.setattr(server, "ADMIN_TOKEN", "")
+    assert client.get("/api/admin/orders", headers={"x-admin-token": ""}).status_code == 403
+    assert client.post("/api/admin/orders/DD1/status", json={"status": "Shipped"},
+                       headers={"x-admin-token": ""}).status_code == 403
+
+
+def test_admin_status_update_emails_customer(client, sent, monkeypatch):
+    monkeypatch.setattr(server, "ADMIN_TOKEN", "s3cret")
+    order = client.post("/api/orders", json=order_payload()).json()
+    sent.clear()
+    wrong = client.post(f"/api/admin/orders/{order['order_id']}/status", json={"status": "Shipped"},
+                        headers={"x-admin-token": "nope"})
+    assert wrong.status_code == 403
+    bad = client.post(f"/api/admin/orders/{order['order_id']}/status", json={"status": "Lost"},
+                      headers={"x-admin-token": "s3cret"})
+    assert bad.status_code == 400
+    r = client.post(f"/api/admin/orders/{order['order_id']}/status", json={"status": "Shipped"},
+                    headers={"x-admin-token": "s3cret"})
+    assert r.status_code == 200
+    assert [m["tag"] for m in sent] == ["status"]
+    assert "ON THE WAY" in sent[0]["html"]
+    tracked = client.get("/api/orders/track", params={"order_id": order["order_id"], "phone": "9876543210"}).json()
+    assert tracked["status"] == "Shipped"
+    listed = client.get("/api/admin/orders", headers={"x-admin-token": "s3cret"}).json()
+    assert listed[0]["order_id"] == order["order_id"]

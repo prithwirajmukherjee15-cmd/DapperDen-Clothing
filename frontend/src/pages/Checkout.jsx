@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Truck, ShieldCheck, PartyPopper, MapPin } from "lucide-react";
+import { Check, Truck, ShieldCheck, PartyPopper, MapPin, Download } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import api from "../api";
+import api, { receiptUrl } from "../api";
 import { formatINR } from "../mock/mock";
 import { INDIAN_CITIES, INDIAN_STATES } from "../mock/india";
 import PaymentGateway from "../components/PaymentGateway";
@@ -15,9 +15,7 @@ export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
   const [step, setStep] = useState(0);
   const [addr, setAddr] = useState({ name: "", phone: "", email: "", pincode: "", line: "", city: "", stateName: "" });
-  const [payLabel, setPayLabel] = useState("");
-  const [paidAmount, setPaidAmount] = useState(0);
-  const [orderId, setOrderId] = useState("");
+  const [order, setOrder] = useState(null);
 
   const total = state?.total ?? subtotal;
 
@@ -38,10 +36,10 @@ export default function Checkout() {
       const detail = e?.response?.data?.detail;
       throw new Error(typeof detail === "string" ? detail : "We couldn't place your order. Please try again.");
     }
-    setPayLabel(label);
-    setPaidAmount(res.data.total);
-    setOrderId(res.data.order_id);
+    setOrder(res.data);
   };
+
+  const isCod = /cash/i.test(order?.payment_method || "");
 
   const finishOrder = () => {
     setStep(2);
@@ -109,22 +107,29 @@ export default function Checkout() {
           </motion.div>
         )}
 
-        {step === 2 && (
+        {step === 2 && order && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center" data-testid="order-confirmation">
             <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-lime/15">
               <PartyPopper size={38} className="text-lime" />
             </div>
             <h2 className="mt-6 font-display text-4xl text-white">ORDER CONFIRMED!</h2>
-            <p className="mt-2 text-[#c9c9cf]">Thanks {addr.name?.split(" ")[0] || "there"}. Your drip is on the way.{addr.email ? ` A confirmation was sent to ${addr.email}.` : ""}</p>
-            <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-[#2a2a30] bg-[#131316] p-5 text-left">
-              <Line l="Order ID" v={orderId} />
-              <Line l="Amount Paid" v={formatINR(paidAmount)} />
-              <Line l="Payment" v={payLabel || "Paid"} />
+            <p className="mt-2 text-[#c9c9cf]">Thanks {addr.name?.split(" ")[0] || "there"}. Your drip is on the way.{addr.email ? ` Your receipt is on its way to ${addr.email}.` : ""}</p>
+            <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-[#2a2a30] bg-[#131316] p-5 text-left" data-testid="order-summary">
+              <Line l="Order ID" v={order.order_id} />
+              <Line l="Payment" v={order.payment_method} />
+              <Line l={`Items (${order.items.reduce((n, i) => n + i.qty, 0)})`} v={formatINR(order.subtotal)} />
+              {order.discount > 0 && <Line l={`Coupon (${order.coupon})`} v={"-" + formatINR(order.discount)} />}
+              <Line l="Shipping" v={order.shipping ? formatINR(order.shipping) : "FREE"} />
+              <Line l={isCod ? "Due on delivery" : "Amount paid"} v={formatINR(order.total)} />
               <Line l="Ship to" v={`${addr.city}, ${addr.stateName}`} />
               <Line l="Delivery" v="3–5 business days" />
             </div>
-            <div className="mt-6 flex justify-center gap-3">
-              <Link to="/track" state={{ orderId, phone: addr.phone }} data-testid="confirm-track-link" className="rounded-full border border-[#2a2a30] px-6 py-3 font-grotesk font-semibold text-white hover:border-lime">Track Order</Link>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <a href={receiptUrl(order.order_id, addr.phone)} target="_blank" rel="noreferrer" data-testid="confirm-receipt-link"
+                className="inline-flex items-center gap-2 rounded-full border border-[#2a2a30] px-6 py-3 font-grotesk font-semibold text-white hover:border-lime">
+                <Download size={16} /> Receipt
+              </a>
+              <Link to="/track" state={{ orderId: order.order_id, phone: addr.phone }} data-testid="confirm-track-link" className="rounded-full border border-[#2a2a30] px-6 py-3 font-grotesk font-semibold text-white hover:border-lime">Track Order</Link>
               <Link to="/men" className="rounded-full bg-lime px-6 py-3 font-grotesk font-bold text-[#0a0a0b]">Keep Shopping</Link>
             </div>
           </motion.div>
