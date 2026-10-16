@@ -139,9 +139,9 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
         </div>
       </div>
 
-      <div className="grid md:grid-cols-[220px_1fr]">
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]">
         {/* Method rail */}
-        <div className="border-b border-slate-100 bg-slate-50 p-2 md:border-b-0 md:border-r">
+        <div className="min-w-0 border-b border-slate-100 bg-slate-50 p-2 md:border-b-0 md:border-r">
           <p className="hidden px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 md:block">Payment Options</p>
           <div className="flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">
             {availableMethods.map((m) => (
@@ -160,7 +160,7 @@ export default function PaymentGateway({ amount: baseAmount, prepaidOff = 0, onS
         </div>
 
         {/* Form area */}
-        <div className="min-h-[340px] p-5">
+        <div className="min-h-[340px] min-w-0 p-5">
           {prepaidOff > 0 && (
             method === "cod" ? (
               <button onClick={() => { setMethod("upi"); setErr(""); }} data-testid="prepaid-nudge"
